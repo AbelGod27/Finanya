@@ -96,7 +96,7 @@ node database/add-avatar.js
 npm start
 ```
 
-6. Abrir en el navegador: http://localhost:3000
+6. Abrir en el navegador: https://finanya.onrender.com
 
 ## Variables de entorno
 
