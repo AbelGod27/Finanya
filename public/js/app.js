@@ -7,10 +7,10 @@ function $(sel) { return document.querySelector(sel); }
 function $$(sel) { return document.querySelectorAll(sel); }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options
-  });
+  const token = localStorage.getItem('finanya-token');
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${API}${path}`, { headers, ...options });
   const data = await res.json();
   if (!res.ok) throw { status: res.status, ...data };
   return data;
@@ -125,6 +125,21 @@ function showAuth(type) {
   }
 }
 
+// ===== TOGGLE PASSWORD =====
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.toggle-pass');
+  if (!btn) return;
+  const input = document.getElementById(btn.dataset.target);
+  const icon = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
+});
+
 // ===== AUTH =====
 $('#show-registro').addEventListener('click', (e) => {
   e.preventDefault();
@@ -150,6 +165,7 @@ $('#login-form').addEventListener('submit', async (e) => {
     });
     currentUser = data.usuario;
     localStorage.setItem('finanya-user', JSON.stringify(currentUser));
+    localStorage.setItem('finanya-token', data.token);
     showToast('Bienvenido, ' + currentUser.nombre, 'success');
     showApp();
   } catch (err) {
@@ -177,6 +193,7 @@ $('#registro-form').addEventListener('submit', async (e) => {
     });
     currentUser = data.usuario;
     localStorage.setItem('finanya-user', JSON.stringify(currentUser));
+    localStorage.setItem('finanya-token', data.token);
     showToast('Cuenta creada exitosamente', 'success');
     showApp();
   } catch (err) {
@@ -187,6 +204,7 @@ $('#registro-form').addEventListener('submit', async (e) => {
 $('#btn-logout').addEventListener('click', () => {
   currentUser = null;
   localStorage.removeItem('finanya-user');
+  localStorage.removeItem('finanya-token');
   $('#app-container').classList.add('d-none');
   $('#landing-container').classList.remove('d-none');
   showToast('Sesión cerrada', 'info');
@@ -206,6 +224,8 @@ $$('.nav-link[data-section]').forEach(link => {
     if (section === 'gastos') loadGastos();
     if (section === 'categorias') loadCategorias();
     if (section === 'metas') loadMetas();
+    if (section === 'analisis') loadAnalisis();
+    if (section === 'presupuestos') loadPresupuestos();
     if (section === 'perfil') loadPerfil();
     const navCollapse = document.querySelector('.navbar-collapse');
     if (navCollapse.classList.contains('show')) {
@@ -233,6 +253,8 @@ function navigateToSection(section) {
   if (section === 'gastos') loadGastos();
   if (section === 'categorias') loadCategorias();
   if (section === 'metas') loadMetas();
+  if (section === 'analisis') loadAnalisis();
+  if (section === 'presupuestos') loadPresupuestos();
   if (section === 'perfil') loadPerfil();
 }
 
@@ -280,8 +302,8 @@ function showApp() {
   loadMotivation();
   loadDashboard();
   loadCategorias();
-  // Load avatar
   loadUserAvatar();
+  checkAdmin();
 }
 
 async function loadUserAvatar() {
@@ -363,6 +385,9 @@ async function loadDashboard() {
     // ===== CHARTS =====
     renderChartGastos(gastosMes);
     renderChartIngresos(ingresos);
+
+    // Cargar presupuestos en el dashboard
+    loadDashboardPresupuestos();
 
     // Últimos movimientos
     const movimientos = [
@@ -836,6 +861,280 @@ window.deleteMeta = async (id) => {
   });
 };
 
+// ===== ANALISIS FINANCIERO =====
+async function loadAnalisis() {
+  try {
+    const [ingresos, gastos] = await Promise.all([
+      request(`/ingresos/usuario/${currentUser.id_usuario}`),
+      request(`/gastos/usuario/${currentUser.id_usuario}`)
+    ]);
+
+    const now = new Date();
+    const mesActual = now.getMonth();
+    const anioActual = now.getFullYear();
+    const mesAnterior = mesActual === 0 ? 11 : mesActual - 1;
+    const anioMesAnterior = mesActual === 0 ? anioActual - 1 : anioActual;
+
+    // Filtrar por mes actual y anterior
+    const ingMesActual = ingresos.filter(i => { const f = new Date(i.fecha); return f.getMonth() === mesActual && f.getFullYear() === anioActual; });
+    const ingMesAnterior = ingresos.filter(i => { const f = new Date(i.fecha); return f.getMonth() === mesAnterior && f.getFullYear() === anioMesAnterior; });
+    const gasMesActual = gastos.filter(g => { const f = new Date(g.fecha); return f.getMonth() === mesActual && f.getFullYear() === anioActual; });
+    const gasMesAnterior = gastos.filter(g => { const f = new Date(g.fecha); return f.getMonth() === mesAnterior && f.getFullYear() === anioMesAnterior; });
+
+    const totalIngActual = ingMesActual.reduce((s, i) => s + Number(i.monto), 0);
+    const totalIngAnterior = ingMesAnterior.reduce((s, i) => s + Number(i.monto), 0);
+    const totalGasActual = gasMesActual.reduce((s, g) => s + Number(g.monto), 0);
+    const totalGasAnterior = gasMesAnterior.reduce((s, g) => s + Number(g.monto), 0);
+
+    // Variaciones porcentuales
+    const varIngresos = totalIngAnterior > 0 ? Math.round(((totalIngActual - totalIngAnterior) / totalIngAnterior) * 100) : (totalIngActual > 0 ? 100 : 0);
+    const varGastos = totalGasAnterior > 0 ? Math.round(((totalGasActual - totalGasAnterior) / totalGasAnterior) * 100) : (totalGasActual > 0 ? 100 : 0);
+
+    // Promedios mensuales (todos los meses con datos)
+    const mesesConIngresos = new Set(ingresos.map(i => `${new Date(i.fecha).getMonth()}-${new Date(i.fecha).getFullYear()}`));
+    const mesesConGastos = new Set(gastos.map(g => `${new Date(g.fecha).getMonth()}-${new Date(g.fecha).getFullYear()}`));
+    const promedioIngresos = mesesConIngresos.size > 0 ? ingresos.reduce((s, i) => s + Number(i.monto), 0) / mesesConIngresos.size : 0;
+    const promedioGastos = mesesConGastos.size > 0 ? gastos.reduce((s, g) => s + Number(g.monto), 0) / mesesConGastos.size : 0;
+
+    // Prediccion ahorro anual
+    const ahorroMensual = promedioIngresos - promedioGastos;
+    const prediccionAnual = ahorroMensual * 12;
+
+    // Categoria con mayor crecimiento de gasto
+    const gastosPorCatActual = {};
+    const gastosPorCatAnterior = {};
+    gasMesActual.forEach(g => { gastosPorCatActual[g.categoria_nombre] = (gastosPorCatActual[g.categoria_nombre] || 0) + Number(g.monto); });
+    gasMesAnterior.forEach(g => { gastosPorCatAnterior[g.categoria_nombre] = (gastosPorCatAnterior[g.categoria_nombre] || 0) + Number(g.monto); });
+
+    let mayorCrecimiento = { nombre: '-', variacion: 0 };
+    Object.keys(gastosPorCatActual).forEach(cat => {
+      const actual = gastosPorCatActual[cat];
+      const anterior = gastosPorCatAnterior[cat] || 0;
+      const variacion = anterior > 0 ? ((actual - anterior) / anterior) * 100 : (actual > 0 ? 100 : 0);
+      if (variacion > mayorCrecimiento.variacion) {
+        mayorCrecimiento = { nombre: cat, variacion: Math.round(variacion), actual, anterior };
+      }
+    });
+
+    // Render resumen textual
+    const resumenItems = [];
+    if (varGastos > 0) resumenItems.push(`<li class="mb-2"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Gastaste <strong>${varGastos}% más</strong> que el mes anterior.</li>`);
+    else if (varGastos < 0) resumenItems.push(`<li class="mb-2"><i class="bi bi-arrow-down-circle text-success me-2"></i>Gastaste <strong>${Math.abs(varGastos)}% menos</strong> que el mes anterior.</li>`);
+    else resumenItems.push(`<li class="mb-2"><i class="bi bi-dash-circle text-muted me-2"></i>Tus gastos se mantienen igual que el mes anterior.</li>`);
+
+    if (varIngresos > 0) resumenItems.push(`<li class="mb-2"><i class="bi bi-arrow-up-circle text-success me-2"></i>Tus ingresos aumentaron <strong>${varIngresos}%</strong>.</li>`);
+    else if (varIngresos < 0) resumenItems.push(`<li class="mb-2"><i class="bi bi-arrow-down-circle text-danger me-2"></i>Tus ingresos bajaron <strong>${Math.abs(varIngresos)}%</strong>.</li>`);
+
+    if (mayorCrecimiento.nombre !== '-' && mayorCrecimiento.variacion > 0) {
+      resumenItems.push(`<li class="mb-2"><i class="bi bi-tag text-warning me-2"></i>La categoría <strong>${mayorCrecimiento.nombre}</strong> es donde más creció tu gasto (+${mayorCrecimiento.variacion}%).</li>`);
+    }
+
+    if (ahorroMensual > 0) resumenItems.push(`<li class="mb-2"><i class="bi bi-piggy-bank text-primary me-2"></i>A este ritmo, podrías ahorrar <strong>${formatMoney(prediccionAnual)}</strong> este año.</li>`);
+    else resumenItems.push(`<li class="mb-2"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Tu gasto promedio supera tus ingresos. Revisa tu presupuesto.</li>`);
+
+    $('#analisis-resumen').innerHTML = resumenItems.length > 0 ? `<ul class="list-unstyled mb-0">${resumenItems.join('')}</ul>` : '<p class="text-muted text-center">Sin datos suficientes para el análisis</p>';
+
+    // Render comparacion
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    $('#analisis-comparacion').innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th></th><th>${meses[mesAnterior]}</th><th>${meses[mesActual]}</th><th>Variación</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="fw-medium">Ingresos</td>
+              <td>${formatMoney(totalIngAnterior)}</td>
+              <td>${formatMoney(totalIngActual)}</td>
+              <td><span class="badge rounded-pill ${varIngresos >= 0 ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${varIngresos >= 0 ? 'text-success' : 'text-danger'}">${varIngresos >= 0 ? '+' : ''}${varIngresos}%</span></td>
+            </tr>
+            <tr>
+              <td class="fw-medium">Gastos</td>
+              <td>${formatMoney(totalGasAnterior)}</td>
+              <td>${formatMoney(totalGasActual)}</td>
+              <td><span class="badge rounded-pill ${varGastos <= 0 ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${varGastos <= 0 ? 'text-success' : 'text-danger'}">${varGastos >= 0 ? '+' : ''}${varGastos}%</span></td>
+            </tr>
+            <tr>
+              <td class="fw-medium">Balance</td>
+              <td>${formatMoney(totalIngAnterior - totalGasAnterior)}</td>
+              <td>${formatMoney(totalIngActual - totalGasActual)}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+
+    // Render promedios
+    $('#analisis-promedios').innerHTML = `
+      <div class="d-flex flex-column gap-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-muted">Promedio mensual de ingresos</span>
+          <span class="fw-bold text-success">${formatMoney(promedioIngresos)}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-muted">Promedio mensual de gastos</span>
+          <span class="fw-bold text-danger">${formatMoney(promedioGastos)}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-muted">Ahorro promedio mensual</span>
+          <span class="fw-bold ${ahorroMensual >= 0 ? 'text-primary' : 'text-danger'}">${formatMoney(ahorroMensual)}</span>
+        </div>
+        <hr class="my-1">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-muted">Predicción de ahorro anual</span>
+          <span class="fw-bold fs-5 ${prediccionAnual >= 0 ? 'text-primary' : 'text-danger'}">${formatMoney(prediccionAnual)}</span>
+        </div>
+      </div>`;
+
+    // Render detalle categorias
+    const allCats = { ...gastosPorCatActual };
+    Object.keys(gastosPorCatAnterior).forEach(c => { if (!allCats[c]) allCats[c] = 0; });
+
+    const catRows = Object.keys(allCats).sort((a, b) => (gastosPorCatActual[b] || 0) - (gastosPorCatActual[a] || 0)).map(cat => {
+      const actual = gastosPorCatActual[cat] || 0;
+      const anterior = gastosPorCatAnterior[cat] || 0;
+      const variacion = anterior > 0 ? Math.round(((actual - anterior) / anterior) * 100) : (actual > 0 ? 100 : 0);
+      return `<tr>
+        <td class="fw-medium">${cat}</td>
+        <td>${formatMoney(anterior)}</td>
+        <td>${formatMoney(actual)}</td>
+        <td><span class="badge rounded-pill ${variacion <= 0 ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${variacion <= 0 ? 'text-success' : 'text-danger'}">${variacion >= 0 ? '+' : ''}${variacion}%</span></td>
+      </tr>`;
+    }).join('');
+
+    $('#analisis-categorias').innerHTML = Object.keys(allCats).length > 0 ? `
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead><tr><th>Categoría</th><th>Mes anterior</th><th>Mes actual</th><th>Variación</th></tr></thead>
+          <tbody>${catRows}</tbody>
+        </table>
+      </div>` : '<p class="text-muted text-center fst-italic py-3">Sin datos de gastos para analizar</p>';
+
+  } catch (err) { console.error('Error cargando análisis:', err); }
+}
+
+// ===== PRESUPUESTOS =====
+$('#btn-nuevo-presupuesto').addEventListener('click', () => {
+  const catGastos = categorias.filter(c => c.tipo === 'gasto');
+  if (catGastos.length === 0) { showToast('Primero crea una categoría de tipo gasto', 'warning'); return; }
+  const now = new Date();
+  openModal('Nuevo Presupuesto', [
+    { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catGastos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
+    { name: 'monto_limite', label: 'Límite mensual', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
+    { name: 'mes', label: 'Mes', type: 'number', required: true, min: '1', value: now.getMonth() + 1, placeholder: '1-12' },
+    { name: 'anio', label: 'Año', type: 'number', required: true, value: now.getFullYear(), placeholder: '2024' }
+  ], async (data) => {
+    try {
+      await request('/presupuestos', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
+      closeModal();
+      loadPresupuestos();
+      loadDashboard();
+      showToast('Presupuesto creado', 'success');
+    } catch (err) { showToast(err.error || 'Error al crear presupuesto', 'danger'); }
+  });
+});
+
+async function loadPresupuestos() {
+  try {
+    const presupuestos = await request(`/presupuestos/usuario/${currentUser.id_usuario}`);
+    const container = $('#lista-presupuestos');
+    if (presupuestos.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center fst-italic py-4 col-12">No hay presupuestos para este mes</p>';
+      return;
+    }
+    container.innerHTML = presupuestos.map(p => {
+      const pct = Math.min(p.porcentaje_uso, 100);
+      let barColor = 'bg-success';
+      let alertClass = '';
+      if (p.porcentaje_uso >= 100) { barColor = 'bg-danger'; alertClass = 'border-danger'; }
+      else if (p.porcentaje_uso >= 80) { barColor = 'bg-warning'; alertClass = 'border-warning'; }
+      return `
+      <div class="col-md-6 col-lg-4">
+        <div class="content-card h-100 ${alertClass}" style="${alertClass ? 'border-width: 2px;' : ''}">
+          <div class="content-card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-semibold mb-0">${p.categoria_nombre}</h6>
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="editPresupuesto(${p.id_presupuesto}, ${p.monto_limite})" title="Editar"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deletePresupuesto(${p.id_presupuesto})" title="Eliminar"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+            ${p.porcentaje_uso >= 100 ? '<div class="alert alert-danger py-1 px-2 small mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Presupuesto excedido</div>' : ''}
+            ${p.porcentaje_uso >= 80 && p.porcentaje_uso < 100 ? '<div class="alert alert-warning py-1 px-2 small mb-2"><i class="bi bi-exclamation-circle-fill me-1"></i>Cerca del límite</div>' : ''}
+            <div class="progress mb-2" style="height: 10px;">
+              <div class="progress-bar ${barColor}" style="width: ${pct}%"></div>
+            </div>
+            <div class="d-flex justify-content-between small">
+              <span class="text-muted">${formatMoney(p.monto_gastado)} / ${formatMoney(p.monto_limite)}</span>
+              <span class="fw-bold ${p.porcentaje_uso >= 100 ? 'text-danger' : p.porcentaje_uso >= 80 ? 'text-warning' : 'text-success'}">${p.porcentaje_uso}%</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) { console.error('Error cargando presupuestos:', err); }
+}
+
+window.editPresupuesto = (id, montoActual) => {
+  openModal('Editar Presupuesto', [
+    { name: 'monto_limite', label: 'Nuevo límite mensual', type: 'number', required: true, step: '0.01', min: '0.01', value: montoActual }
+  ], async (data) => {
+    try {
+      await request(`/presupuestos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      closeModal();
+      loadPresupuestos();
+      loadDashboard();
+      showToast('Presupuesto actualizado', 'success');
+    } catch (err) { showToast(err.error || 'Error al editar presupuesto', 'danger'); }
+  });
+};
+
+window.deletePresupuesto = async (id) => {
+  showConfirm('¿Eliminar este presupuesto?', async () => {
+    try {
+      await request(`/presupuestos/${id}`, { method: 'DELETE' });
+      loadPresupuestos();
+      loadDashboard();
+      showToast('Presupuesto eliminado', 'success');
+    } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+  });
+};
+
+// Cargar presupuestos en el dashboard
+async function loadDashboardPresupuestos() {
+  try {
+    const presupuestos = await request(`/presupuestos/usuario/${currentUser.id_usuario}`);
+    const card = $('#dashboard-presupuestos-card');
+    const container = $('#dashboard-presupuestos');
+
+    if (presupuestos.length === 0) {
+      card.style.display = 'none';
+      return;
+    }
+
+    card.style.display = 'block';
+    container.innerHTML = presupuestos.map(p => {
+      const pct = Math.min(p.porcentaje_uso, 100);
+      let barColor = 'bg-success';
+      let textColor = 'text-success';
+      if (p.porcentaje_uso >= 100) { barColor = 'bg-danger'; textColor = 'text-danger'; }
+      else if (p.porcentaje_uso >= 80) { barColor = 'bg-warning'; textColor = 'text-warning'; }
+      return `
+      <div class="d-flex align-items-center gap-3 py-2 border-bottom">
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="small fw-medium">${p.categoria_nombre}</span>
+            <span class="small fw-bold ${textColor}">${p.porcentaje_uso}%</span>
+          </div>
+          <div class="progress" style="height: 6px;">
+            <div class="progress-bar ${barColor}" style="width: ${pct}%"></div>
+          </div>
+        </div>
+        <span class="small text-muted text-nowrap">${formatMoney(p.monto_gastado)} / ${formatMoney(p.monto_limite)}</span>
+      </div>`;
+    }).join('');
+  } catch (err) { console.error('Error cargando presupuestos dashboard:', err); }
+}
+
 // ===== PERFIL =====
 async function loadPerfil() {
   try {
@@ -908,8 +1207,10 @@ $('#avatar-input').addEventListener('change', async (e) => {
   formData.append('avatar', file);
 
   try {
+    const token = localStorage.getItem('finanya-token');
     const res = await fetch(`/api/auth/perfil/${currentUser.id_usuario}/avatar`, {
       method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       body: formData
     });
     const data = await res.json();
@@ -926,13 +1227,130 @@ $('#avatar-input').addEventListener('change', async (e) => {
   }
 });
 
+// ===== ADMIN PANEL =====
+function checkAdmin() {
+  if (currentUser && currentUser.rol === 'admin') {
+    $('#btn-admin-panel').classList.remove('d-none');
+  }
+}
+
+$('#btn-admin-panel').addEventListener('click', () => {
+  document.querySelector('.app-main').classList.add('d-none');
+  $('#admin-panel').classList.remove('d-none');
+  loadAdminDashboard();
+  loadAdminUsuarios();
+});
+
+$('#btn-volver-app').addEventListener('click', () => {
+  $('#admin-panel').classList.add('d-none');
+  document.querySelector('.app-main').classList.remove('d-none');
+});
+
+$('#btn-admin-buscar').addEventListener('click', () => loadAdminUsuarios());
+$('#admin-buscar').addEventListener('keyup', (e) => { if (e.key === 'Enter') loadAdminUsuarios(); });
+
+async function loadAdminDashboard() {
+  try {
+    const data = await request('/admin/dashboard');
+
+    $('#admin-total-usuarios').textContent = data.estadisticas.total_usuarios;
+    $('#admin-usuarios-activos').textContent = data.estadisticas.usuarios_activos;
+    $('#admin-total-ingresos').textContent = data.estadisticas.total_ingresos;
+    $('#admin-total-gastos').textContent = data.estadisticas.total_gastos;
+    $('#admin-total-metas').textContent = data.estadisticas.total_metas;
+
+    // Usuarios mas activos
+    $('#admin-mas-activos').innerHTML = data.usuarios_mas_activos.length > 0
+      ? data.usuarios_mas_activos.map((u, i) => `
+        <div class="d-flex justify-content-between align-items-center py-2 ${i < data.usuarios_mas_activos.length - 1 ? 'border-bottom' : ''}">
+          <div><span class="fw-medium">${u.nombre}</span><br><small class="text-muted">${u.correo}</small></div>
+          <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">${u.total_movimientos} mov.</span>
+        </div>`).join('')
+      : '<p class="text-muted text-center small">Sin datos</p>';
+
+    // Actividad reciente
+    $('#admin-actividad').innerHTML = data.actividad_reciente.length > 0
+      ? data.actividad_reciente.map(a => `
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <div><small class="fw-medium">${a.nombre}</small><br><small class="text-muted">${a.accion} - ${a.detalle || ''}</small></div>
+          <small class="text-muted text-nowrap">${new Date(a.fecha).toLocaleDateString('es-MX')}</small>
+        </div>`).join('')
+      : '<p class="text-muted text-center small">Sin actividad</p>';
+  } catch (err) { console.error('Error cargando admin dashboard:', err); }
+}
+
+async function loadAdminUsuarios() {
+  try {
+    const buscar = $('#admin-buscar').value;
+    const url = buscar ? `/admin/usuarios?buscar=${encodeURIComponent(buscar)}` : '/admin/usuarios';
+    const usuarios = await request(url);
+
+    $('#admin-lista-usuarios').innerHTML = usuarios.length > 0
+      ? `<div class="table-responsive"><table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Registros</th><th>Último acceso</th><th>Acciones</th></tr></thead>
+          <tbody>${usuarios.map(u => `
+            <tr>
+              <td class="fw-medium">${u.nombre}</td>
+              <td class="small">${u.correo}</td>
+              <td><span class="badge rounded-pill ${u.rol === 'admin' ? 'bg-warning text-dark' : 'bg-secondary bg-opacity-10 text-secondary'} text-uppercase">${u.rol}</span></td>
+              <td><span class="badge rounded-pill ${u.activo ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${u.activo ? 'text-success' : 'text-danger'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
+              <td class="small">${u.num_ingresos}I / ${u.num_gastos}G</td>
+              <td class="small">${u.ultimo_acceso ? new Date(u.ultimo_acceso).toLocaleDateString('es-MX') : '-'}</td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-${u.activo ? 'warning' : 'success'} rounded-circle" onclick="toggleUsuario(${u.id_usuario}, ${!u.activo})" title="${u.activo ? 'Desactivar' : 'Activar'}"><i class="bi bi-${u.activo ? 'pause' : 'play'}"></i></button>
+                  <button class="btn btn-sm btn-outline-primary rounded-circle" onclick="cambiarRol(${u.id_usuario}, '${u.rol === 'admin' ? 'usuario' : 'admin'}')" title="Cambiar rol"><i class="bi bi-arrow-repeat"></i></button>
+                  <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarUsuarioAdmin(${u.id_usuario})" title="Eliminar"><i class="bi bi-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table></div>`
+      : '<p class="text-muted text-center small">No se encontraron usuarios</p>';
+  } catch (err) { console.error('Error cargando usuarios:', err); }
+}
+
+window.toggleUsuario = async (id, activo) => {
+  try {
+    await request(`/admin/usuarios/${id}/estado`, { method: 'PATCH', body: JSON.stringify({ activo }) });
+    showToast(activo ? 'Usuario activado' : 'Usuario desactivado', 'success');
+    loadAdminUsuarios();
+    loadAdminDashboard();
+  } catch (err) { showToast(err.error || 'Error', 'danger'); }
+};
+
+window.cambiarRol = async (id, rol) => {
+  showConfirm(`¿Cambiar rol a "${rol}"?`, async () => {
+    try {
+      await request(`/admin/usuarios/${id}/rol`, { method: 'PATCH', body: JSON.stringify({ rol }) });
+      showToast('Rol actualizado', 'success');
+      loadAdminUsuarios();
+    } catch (err) { showToast(err.error || 'Error', 'danger'); }
+  });
+};
+
+window.eliminarUsuarioAdmin = async (id) => {
+  showConfirm('¿Eliminar este usuario permanentemente?', async () => {
+    try {
+      await request(`/admin/usuarios/${id}`, { method: 'DELETE' });
+      showToast('Usuario eliminado', 'success');
+      loadAdminUsuarios();
+      loadAdminDashboard();
+    } catch (err) { showToast(err.error || 'Error', 'danger'); }
+  });
+};
+
 // ===== INIT =====
 initTheme();
 const saved = localStorage.getItem('finanya-user');
-if (saved) {
+const savedToken = localStorage.getItem('finanya-token');
+if (saved && savedToken) {
   currentUser = JSON.parse(saved);
   showApp();
 } else {
+  // Si hay usuario pero no token, limpiar sesión vieja
+  localStorage.removeItem('finanya-user');
+  localStorage.removeItem('finanya-token');
   // Show landing page by default
   $('#landing-container').classList.remove('d-none');
 }

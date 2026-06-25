@@ -1,9 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
+const { validarUsuario } = require('../middlewares/validacionMiddleware');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'finanya_secret_key_2024';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 // Configure multer for avatar uploads
 const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'avatars');
@@ -33,7 +38,7 @@ const upload = multer({
 const router = express.Router();
 
 // Registro
-router.post('/registro', async (req, res) => {
+router.post('/registro', validarUsuario, async (req, res) => {
   try {
     const { nombre, correo, password } = req.body;
 
@@ -134,9 +139,19 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
+    // Actualizar ultimo acceso
+    await pool.query('UPDATE usuarios SET ultimo_acceso = NOW() WHERE id_usuario = $1', [usuario.id_usuario]);
+
+    // Registrar actividad
+    await pool.query(
+      'INSERT INTO actividad_log (id_usuario, accion, detalle) VALUES ($1, $2, $3)',
+      [usuario.id_usuario, 'inicio_sesion', 'Inicio de sesion exitoso']
+    );
+
     res.json({
       mensaje: 'Inicio de sesión exitoso',
-      usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, correo: usuario.correo }
+      token: jwt.sign({ id_usuario: usuario.id_usuario, correo: usuario.correo }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN }),
+      usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, correo: usuario.correo, rol: usuario.rol }
     });
   } catch (error) {
     console.error('Error en login:', error);

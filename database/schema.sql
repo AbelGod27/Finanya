@@ -1,5 +1,14 @@
--- Crear base de datos
--- CREATE DATABASE finanya;
+-- ================================================
+-- FINANYA - Esquema completo de base de datos
+-- PostgreSQL
+-- ================================================
+
+-- Tipo ENUM para categorias
+DO $$ BEGIN
+  CREATE TYPE tipo_categoria AS ENUM ('ingreso', 'gasto');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS usuarios (
@@ -7,13 +16,14 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nombre VARCHAR(100) NOT NULL,
   correo VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  rol VARCHAR(20) DEFAULT 'usuario',
+  activo BOOLEAN DEFAULT true,
+  avatar_url VARCHAR(500) DEFAULT NULL,
+  ultimo_acceso TIMESTAMP DEFAULT NULL,
   fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tipo ENUM simulado con CHECK constraint
-CREATE TYPE tipo_categoria AS ENUM ('ingreso', 'gasto');
-
--- Tabla de Categorías
+-- Tabla de Categorias
 CREATE TABLE IF NOT EXISTS categorias (
   id_categoria SERIAL PRIMARY KEY,
   id_usuario INT NOT NULL,
@@ -80,4 +90,14 @@ CREATE TABLE IF NOT EXISTS presupuestos (
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
   FOREIGN KEY (id_categoria) REFERENCES categorias(id_categoria),
   UNIQUE (id_usuario, id_categoria, mes, anio)
+);
+
+-- Tabla de Registro de Actividad
+CREATE TABLE IF NOT EXISTS actividad_log (
+  id_log SERIAL PRIMARY KEY,
+  id_usuario INT NOT NULL,
+  accion VARCHAR(100) NOT NULL,
+  detalle VARCHAR(500),
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
