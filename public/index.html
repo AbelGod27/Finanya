@@ -245,116 +245,102 @@
 
       <!-- Dashboard -->
       <section id="section-dashboard" class="section">
+        <!-- Frase motivacional -->
         <div class="motivation-banner mb-4">
           <i class="bi bi-lightbulb me-2"></i>
           <span id="motivation-quote">El mejor momento para empezar a ahorrar fue ayer. El segundo mejor momento es ahora.</span>
         </div>
 
+        <!-- A) RESUMEN PRINCIPAL -->
         <div class="row g-3 mb-4">
-          <div class="col-6 col-xl-3">
+          <div class="col-6 col-lg-3">
             <div class="stat-card stat-balance" role="button" data-navigate="dashboard">
               <div class="stat-card-icon"><i class="bi bi-wallet2"></i></div>
-              <p class="stat-card-label">Balance del mes<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Ingresos menos gastos y ahorro del mes actual">?</span></p>
-              <h4 class="stat-card-value" id="balance">$0.00</h4>
+              <p class="stat-card-label">Balance</p>
+              <h3 class="stat-card-value" id="balance">$0.00</h3>
             </div>
           </div>
-          <div class="col-6 col-xl-3">
+          <div class="col-6 col-lg-3">
             <div class="stat-card stat-ingresos" role="button" data-navigate="ingresos">
               <div class="stat-card-icon"><i class="bi bi-arrow-down-circle"></i></div>
-              <p class="stat-card-label">Ingresos<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Total de dinero recibido en el mes actual">?</span></p>
-              <h4 class="stat-card-value" id="total-ingresos">$0.00</h4>
+              <p class="stat-card-label">Ingresos</p>
+              <h3 class="stat-card-value" id="total-ingresos">$0.00</h3>
             </div>
           </div>
-          <div class="col-6 col-xl-3">
+          <div class="col-6 col-lg-3">
             <div class="stat-card stat-gastos" role="button" data-navigate="gastos">
               <div class="stat-card-icon"><i class="bi bi-arrow-up-circle"></i></div>
-              <p class="stat-card-label">Gastos<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Total de dinero gastado en el mes actual">?</span></p>
-              <h4 class="stat-card-value" id="total-gastos">$0.00</h4>
+              <p class="stat-card-label">Gastos</p>
+              <h3 class="stat-card-value" id="total-gastos">$0.00</h3>
             </div>
           </div>
-          <div class="col-6 col-xl-3">
+          <div class="col-6 col-lg-3">
             <div class="stat-card stat-ahorro" role="button" data-navigate="metas">
               <div class="stat-card-icon"><i class="bi bi-piggy-bank"></i></div>
-              <p class="stat-card-label">Ahorrado<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Suma total acumulada en todas tus metas de ahorro">?</span></p>
-              <h4 class="stat-card-value" id="total-ahorro">$0.00</h4>
+              <p class="stat-card-label">Ahorrado</p>
+              <h3 class="stat-card-value" id="total-ahorro">$0.00</h3>
             </div>
           </div>
         </div>
 
+        <!-- B) GRAFICAS -->
         <div class="row g-3 mb-4">
-          <div class="col-md-4">
-            <div class="insight-card">
-              <i class="bi bi-trophy text-warning"></i>
-              <div>
-                <p class="small text-muted mb-0">Mayor gasto<span class="help-icon" data-bs-toggle="tooltip" title="Categoria donde mas gastaste este mes">?</span></p>
-                <p class="fw-semibold mb-0" id="top-category">-</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="insight-card">
-              <i class="bi bi-graph-up text-success"></i>
-              <div>
-                <p class="small text-muted mb-0">Promedio mensual<span class="help-icon" data-bs-toggle="tooltip" title="Promedio de gastos por mes basado en tu historial completo">?</span></p>
-                <p class="fw-semibold mb-0" id="avg-monthly">$0.00</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="insight-card">
-              <i class="bi bi-percent text-primary"></i>
-              <div>
-                <p class="small text-muted mb-0">Tasa de ahorro<span class="help-icon" data-bs-toggle="tooltip" title="Porcentaje de tus ingresos destinado al ahorro">?</span></p>
-                <p class="fw-semibold mb-0" id="savings-rate">0%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <div class="content-card">
+          <div class="col-lg-5">
+            <div class="content-card h-100">
               <div class="content-card-header">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Gastos por categoría</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2 text-primary"></i>Gastos por categoría</h6>
               </div>
-              <div class="content-card-body">
-                <canvas id="chart-gastos-categoria" height="250"></canvas>
-                <p id="chart-gastos-empty" class="text-muted text-center fst-italic py-4 d-none">No hay gastos este mes</p>
+              <div class="content-card-body d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                <canvas id="chart-gastos-categoria"></canvas>
+                <p id="chart-gastos-empty" class="text-muted text-center fst-italic d-none">No hay gastos este mes</p>
               </div>
             </div>
           </div>
-          <div class="col-md-6">
-            <div class="content-card">
+          <div class="col-lg-7">
+            <div class="content-card h-100">
               <div class="content-card-header">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-2"></i>Ingresos por mes</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-2 text-primary"></i>Ingresos por mes</h6>
               </div>
-              <div class="content-card-body">
-                <canvas id="chart-ingresos-mes" height="250"></canvas>
-                <p id="chart-ingresos-empty" class="text-muted text-center fst-italic py-4 d-none">No hay ingresos registrados</p>
+              <div class="content-card-body" style="min-height: 280px;">
+                <canvas id="chart-ingresos-mes"></canvas>
+                <p id="chart-ingresos-empty" class="text-muted text-center fst-italic d-none">No hay ingresos registrados</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Presupuestos en dashboard -->
-        <div class="content-card mb-4" id="dashboard-presupuestos-card" style="display:none;">
-          <div class="content-card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-semibold"><i class="bi bi-speedometer2 me-2"></i>Presupuestos del mes</h6>
-            <a href="#" class="small text-primary fw-semibold" onclick="navigateToSection('presupuestos'); return false;">Ver todos</a>
+        <!-- C) DETALLE: Ultimos movimientos -->
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <div class="content-card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-arrow-down-circle text-success me-2"></i>Últimos ingresos</h6>
+                <a href="#" class="small text-primary fw-semibold" onclick="navigateToSection('ingresos'); return false;">Ver todos</a>
+              </div>
+              <div class="content-card-body" id="dashboard-ultimos-ingresos">
+                <p class="text-muted text-center fst-italic py-3">Sin ingresos recientes</p>
+              </div>
+            </div>
           </div>
-          <div class="content-card-body" id="dashboard-presupuestos"></div>
+          <div class="col-lg-6">
+            <div class="content-card h-100">
+              <div class="content-card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Últimos gastos</h6>
+                <a href="#" class="small text-primary fw-semibold" onclick="navigateToSection('gastos'); return false;">Ver todos</a>
+              </div>
+              <div class="content-card-body" id="dashboard-ultimos-gastos">
+                <p class="text-muted text-center fst-italic py-3">Sin gastos recientes</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Recent movements -->
-        <div class="content-card">
-          <div class="content-card-header">
-            <h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Últimos movimientos</h6>
-          </div>
-          <div class="content-card-body" id="ultimos-movimientos">
-            <p class="text-muted text-center fst-italic py-4">No hay movimientos registrados</p>
-          </div>
-        </div>
+        <!-- Elementos ocultos para compatibilidad con JS existente -->
+        <span id="top-category" class="d-none"></span>
+        <span id="avg-monthly" class="d-none"></span>
+        <span id="savings-rate" class="d-none"></span>
+        <div id="ultimos-movimientos" class="d-none"></div>
+        <div id="dashboard-presupuestos-card" class="d-none"><div id="dashboard-presupuestos"></div></div>
       </section>
 
       <!-- Ingresos -->

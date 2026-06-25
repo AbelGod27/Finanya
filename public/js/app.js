@@ -396,25 +396,36 @@ async function loadDashboard() {
     // Cargar presupuestos en el dashboard
     loadDashboardPresupuestos();
 
-    // Últimos movimientos
-    const movimientos = [
-      ...ingresos.map(i => ({ ...i, tipo: 'ingreso' })),
-      ...gastos.map(g => ({ ...g, tipo: 'gasto' }))
-    ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).slice(0, 8);
+    // Últimos ingresos y gastos separados
+    const ultimosIngresos = ingresos.slice(0, 5);
+    const ultimosGastos = gastos.slice(0, 5);
 
-    const container = $('#ultimos-movimientos');
-    if (movimientos.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center fst-italic">No hay movimientos registrados</p>';
+    const contIngresos = $('#dashboard-ultimos-ingresos');
+    if (ultimosIngresos.length === 0) {
+      contIngresos.innerHTML = '<p class="text-muted text-center fst-italic py-3">Sin ingresos recientes</p>';
     } else {
-      container.innerHTML = movimientos.map(m => `
-        <div class="movimiento-item">
+      contIngresos.innerHTML = ultimosIngresos.map(i => `
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <div>
-            <div class="fw-semibold">${m.descripcion}</div>
-            <small class="text-muted">${new Date(m.fecha).toLocaleDateString('es-MX')} · ${m.categoria_nombre || ''}</small>
+            <div class="fw-medium small">${i.descripcion}</div>
+            <small class="text-muted">${new Date(i.fecha).toLocaleDateString('es-MX')} · ${i.categoria_nombre || ''}</small>
           </div>
-          <span class="${m.tipo === 'ingreso' ? 'mov-ingreso' : 'mov-gasto'}">
-            ${m.tipo === 'ingreso' ? '+' : '-'}${formatMoney(m.monto)}
-          </span>
+          <span class="fw-bold text-success small">+${formatMoney(i.monto)}</span>
+        </div>
+      `).join('');
+    }
+
+    const contGastos = $('#dashboard-ultimos-gastos');
+    if (ultimosGastos.length === 0) {
+      contGastos.innerHTML = '<p class="text-muted text-center fst-italic py-3">Sin gastos recientes</p>';
+    } else {
+      contGastos.innerHTML = ultimosGastos.map(g => `
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <div>
+            <div class="fw-medium small">${g.descripcion}</div>
+            <small class="text-muted">${new Date(g.fecha).toLocaleDateString('es-MX')} · ${g.categoria_nombre || ''}</small>
+          </div>
+          <span class="fw-bold text-danger small">-${formatMoney(g.monto)}</span>
         </div>
       `).join('');
     }
