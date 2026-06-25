@@ -1,0 +1,467 @@
+﻿<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finanya</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== LANDING PAGE ===== -->
+  <div id="landing-container">
+    <nav class="navbar navbar-expand-lg fixed-top landing-nav">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="#">
+          <span class="logo-icon"><i class="bi bi-gem text-primary"></i></span> Finanya
+        </a>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm rounded-pill px-3" id="landing-login">Iniciar Sesión</button>
+          <button class="btn btn-primary btn-sm rounded-pill px-3" id="landing-registro">Crear Cuenta</button>
+        </div>
+      </div>
+    </nav>
+
+    <section class="hero-section">
+      <div class="container">
+        <div class="row align-items-center min-vh-100">
+          <div class="col-lg-6">
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 mb-3"><i class="bi bi-stars me-1"></i> Tu dinero, bajo control</span>
+            <h1 class="hero-title">Gestiona tus finanzas de forma <span class="text-gradient">inteligente</span></h1>
+            <p class="hero-subtitle">Controla ingresos, gastos, ahorro y presupuestos con una interfaz moderna y fácil de usar. Todo en un solo lugar.</p>
+            <div class="d-flex gap-3 mt-4">
+              <button class="btn btn-primary btn-lg rounded-pill px-4" id="hero-start">Comenzar gratis <i class="bi bi-arrow-right"></i></button>
+            </div>
+            <div class="hero-stats mt-5">
+              <div class="stat-item">
+                <span class="stat-number">100%</span>
+                <span class="stat-label">Gratis</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number"><i class="bi bi-shield-lock"></i></span>
+                <span class="stat-label">Seguro</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number"><i class="bi bi-phone"></i></span>
+                <span class="stat-label">Responsive</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6 d-none d-lg-block">
+            <div class="hero-visual">
+              <div class="floating-card card-1">
+                <i class="bi bi-graph-up-arrow text-success"></i>
+                <span>+$2,400 este mes</span>
+              </div>
+              <div class="floating-card card-2">
+                <i class="bi bi-piggy-bank text-warning"></i>
+                <span>Meta: 85% completada</span>
+              </div>
+              <div class="floating-card card-3">
+                <i class="bi bi-shield-check text-primary"></i>
+                <span>Presupuesto OK</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section py-5">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">Todo lo que necesitas</h2>
+          <p class="text-muted">Herramientas poderosas para tus finanzas personales</p>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="bi bi-wallet2"></i></div>
+              <h5>Ingresos y Gastos</h5>
+              <p>Registra cada movimiento con categorías personalizadas y filtros avanzados.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="bi bi-bullseye"></i></div>
+              <h5>Metas de Ahorro</h5>
+              <p>Define objetivos financieros y visualiza tu progreso en tiempo real.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
+              <h5>Dashboard Inteligente</h5>
+              <p>Gráficas interactivas y estadísticas automáticas de tus finanzas.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <div class="container text-center py-4">
+        <p class="mb-1 fw-semibold"><i class="bi bi-gem text-primary"></i> Finanya</p>
+        <p class="text-muted small mb-0">&copy; 2024 Finanya. Hecho con <i class="bi bi-heart-fill text-danger"></i> para tu bienestar financiero.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===== AUTH CONTAINER ===== -->
+  <div id="auth-container" class="d-none">
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <div class="text-center mb-4">
+          <i class="bi bi-gem text-primary fs-1"></i>
+          <h3 class="fw-bold mt-2">Finanya</h3>
+          <p class="text-muted small">Gestión financiera personal</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form">
+          <h5 class="mb-3 fw-semibold">Iniciar Sesión</h5>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Correo</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control" id="login-correo" required placeholder="tu@correo.com">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input type="password" class="form-control" id="login-password" required placeholder="••••••••">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 mt-2">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+          </button>
+          <p class="text-center mt-3 small">¿No tienes cuenta? <a href="#" id="show-registro" class="fw-semibold">Regístrate</a></p>
+          <div id="login-error" class="alert alert-danger mt-3 d-none small" role="alert"></div>
+        </form>
+
+        <!-- Registro Form -->
+        <form id="registro-form" class="d-none">
+          <h5 class="mb-3 fw-semibold">Crear Cuenta</h5>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Nombre</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input type="text" class="form-control" id="reg-nombre" required placeholder="Tu nombre">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Correo</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control" id="reg-correo" required placeholder="tu@correo.com">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input type="password" class="form-control" id="reg-password" required placeholder="Mínimo 8 caracteres">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 mt-2">
+            <i class="bi bi-person-plus me-2"></i>Registrarse
+          </button>
+          <p class="text-center mt-3 small">¿Ya tienes cuenta? <a href="#" id="show-login" class="fw-semibold">Inicia sesión</a></p>
+          <div id="registro-error" class="alert alert-danger mt-3 d-none small" role="alert"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== APP PRINCIPAL ===== -->
+  <div id="app-container" class="d-none">
+    <nav class="navbar navbar-expand-lg sticky-top app-navbar">
+      <div class="container-fluid px-3 px-lg-4">
+        <a class="navbar-brand fw-bold" href="#">
+          <span class="logo-icon"><i class="bi bi-gem text-primary"></i></span> Finanya
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto gap-1">
+            <li class="nav-item">
+              <a class="nav-link active rounded-pill" href="#" data-section="dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="ingresos"><i class="bi bi-arrow-down-circle"></i> Ingresos</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="gastos"><i class="bi bi-arrow-up-circle"></i> Gastos</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="categorias"><i class="bi bi-tags"></i> Categorías</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="metas"><i class="bi bi-bullseye"></i> Metas</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="perfil"><i class="bi bi-person-circle"></i> Perfil</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center gap-3">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="theme-switch">
+              <label class="form-check-label small" for="theme-switch"><i class="bi bi-moon-stars"></i></label>
+            </div>
+            <div class="user-avatar" id="user-avatar">A</div>
+            <span id="user-name" class="fw-semibold small d-none d-md-inline"></span>
+            <button id="btn-logout" class="btn btn-outline-danger btn-sm rounded-pill"><i class="bi bi-box-arrow-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="app-main">
+
+      <!-- Dashboard -->
+      <section id="section-dashboard" class="section">
+        <div class="motivation-banner mb-4">
+          <i class="bi bi-lightbulb me-2"></i>
+          <span id="motivation-quote">El mejor momento para empezar a ahorrar fue ayer. El segundo mejor momento es ahora.</span>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-xl-3">
+            <div class="stat-card stat-balance" role="button" data-navigate="dashboard">
+              <div class="stat-card-icon"><i class="bi bi-wallet2"></i></div>
+              <p class="stat-card-label">Balance del mes</p>
+              <h4 class="stat-card-value" id="balance">$0.00</h4>
+            </div>
+          </div>
+          <div class="col-6 col-xl-3">
+            <div class="stat-card stat-ingresos" role="button" data-navigate="ingresos">
+              <div class="stat-card-icon"><i class="bi bi-arrow-down-circle"></i></div>
+              <p class="stat-card-label">Ingresos</p>
+              <h4 class="stat-card-value" id="total-ingresos">$0.00</h4>
+            </div>
+          </div>
+          <div class="col-6 col-xl-3">
+            <div class="stat-card stat-gastos" role="button" data-navigate="gastos">
+              <div class="stat-card-icon"><i class="bi bi-arrow-up-circle"></i></div>
+              <p class="stat-card-label">Gastos</p>
+              <h4 class="stat-card-value" id="total-gastos">$0.00</h4>
+            </div>
+          </div>
+          <div class="col-6 col-xl-3">
+            <div class="stat-card stat-ahorro" role="button" data-navigate="metas">
+              <div class="stat-card-icon"><i class="bi bi-piggy-bank"></i></div>
+              <p class="stat-card-label">Ahorrado</p>
+              <h4 class="stat-card-value" id="total-ahorro">$0.00</h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="insight-card">
+              <i class="bi bi-trophy text-warning"></i>
+              <div>
+                <p class="small text-muted mb-0">Mayor gasto</p>
+                <p class="fw-semibold mb-0" id="top-category">-</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="insight-card">
+              <i class="bi bi-graph-up text-success"></i>
+              <div>
+                <p class="small text-muted mb-0">Promedio mensual</p>
+                <p class="fw-semibold mb-0" id="avg-monthly">$0.00</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="insight-card">
+              <i class="bi bi-percent text-primary"></i>
+              <div>
+                <p class="small text-muted mb-0">Tasa de ahorro</p>
+                <p class="fw-semibold mb-0" id="savings-rate">0%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="content-card">
+              <div class="content-card-header">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Gastos por categoría</h6>
+              </div>
+              <div class="content-card-body">
+                <canvas id="chart-gastos-categoria" height="250"></canvas>
+                <p id="chart-gastos-empty" class="text-muted text-center fst-italic py-4 d-none">No hay gastos este mes</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="content-card">
+              <div class="content-card-header">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-2"></i>Ingresos por mes</h6>
+              </div>
+              <div class="content-card-body">
+                <canvas id="chart-ingresos-mes" height="250"></canvas>
+                <p id="chart-ingresos-empty" class="text-muted text-center fst-italic py-4 d-none">No hay ingresos registrados</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent movements -->
+        <div class="content-card">
+          <div class="content-card-header">
+            <h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Últimos movimientos</h6>
+          </div>
+          <div class="content-card-body" id="ultimos-movimientos">
+            <p class="text-muted text-center fst-italic py-4">No hay movimientos registrados</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ingresos -->
+      <section id="section-ingresos" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-arrow-down-circle text-success me-2"></i>Ingresos</h4>
+          <button class="btn btn-success rounded-pill" id="btn-nuevo-ingreso"><i class="bi bi-plus-lg"></i> Nuevo</button>
+        </div>
+        <div class="content-card">
+          <div class="content-card-body" id="lista-ingresos">
+            <p class="text-muted text-center fst-italic py-4">No hay ingresos registrados</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gastos -->
+      <section id="section-gastos" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Gastos</h4>
+          <button class="btn btn-danger rounded-pill" id="btn-nuevo-gasto"><i class="bi bi-plus-lg"></i> Nuevo</button>
+        </div>
+        <div class="content-card">
+          <div class="content-card-body" id="lista-gastos">
+            <p class="text-muted text-center fst-italic py-4">No hay gastos registrados</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Categorías -->
+      <section id="section-categorias" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-tags text-primary me-2"></i>Categorías</h4>
+          <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm rounded-pill" id="filtro-cat-tipo" style="width: auto;">
+              <option value="">Todas</option>
+              <option value="ingreso">Ingresos</option>
+              <option value="gasto">Gastos</option>
+            </select>
+            <button class="btn btn-primary rounded-pill" id="btn-nueva-categoria"><i class="bi bi-plus-lg"></i> Nueva</button>
+          </div>
+        </div>
+        <div class="content-card">
+          <div class="content-card-body" id="lista-categorias">
+            <p class="text-muted text-center fst-italic py-4">No hay categorías registradas</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Metas -->
+      <section id="section-metas" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-bullseye text-warning me-2"></i>Metas de Ahorro</h4>
+          <button class="btn btn-warning rounded-pill text-dark" id="btn-nueva-meta"><i class="bi bi-plus-lg"></i> Nueva</button>
+        </div>
+        <div id="lista-metas" class="row g-3">
+          <p class="text-muted text-center fst-italic py-4 col-12">No hay metas registradas</p>
+        </div>
+      </section>
+
+      <!-- Perfil -->
+      <section id="section-perfil" class="section d-none">
+        <h4 class="fw-bold mb-4"><i class="bi bi-person-circle text-primary me-2"></i>Mi Perfil</h4>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="content-card text-center">
+              <div class="content-card-body py-4">
+                <div class="profile-avatar-wrapper mb-3">
+                  <img id="profile-avatar-img" src="" alt="Avatar" class="profile-avatar-img d-none">
+                  <div id="profile-avatar-letter" class="profile-avatar-letter">A</div>
+                  <label for="avatar-input" class="profile-avatar-edit" title="Cambiar foto">
+                    <i class="bi bi-camera"></i>
+                  </label>
+                  <input type="file" id="avatar-input" accept="image/*" class="d-none">
+                </div>
+                <h5 class="fw-bold mb-1" id="profile-name-display">-</h5>
+                <p class="text-muted small mb-0" id="profile-email-display">-</p>
+                <p class="text-muted small mt-2"><i class="bi bi-calendar3 me-1"></i>Miembro desde: <span id="profile-date">-</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <div class="content-card">
+              <div class="content-card-header">
+                <h6 class="mb-0 fw-semibold">Editar información</h6>
+              </div>
+              <div class="content-card-body">
+                <form id="profile-form">
+                  <div class="mb-3">
+                    <label class="form-label small fw-medium">Nombre</label>
+                    <input type="text" class="form-control" id="profile-nombre" placeholder="Tu nombre">
+                  </div>
+                  <hr class="my-4">
+                  <h6 class="fw-semibold mb-3">Cambiar contraseña</h6>
+                  <div class="mb-3">
+                    <label class="form-label small fw-medium">Contraseña actual</label>
+                    <input type="password" class="form-control" id="profile-pass-actual" placeholder="••••••••">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-medium">Nueva contraseña</label>
+                    <input type="password" class="form-control" id="profile-pass-nueva" placeholder="Mínimo 8 caracteres">
+                  </div>
+                  <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="appModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="modal-title">Título</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="modal-form">
+          <div class="modal-body" id="modal-body"></div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
