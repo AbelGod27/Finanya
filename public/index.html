@@ -206,6 +206,12 @@
               <a class="nav-link rounded-pill" href="#" data-section="categorias"><i class="bi bi-tags"></i> Categorías</a>
             </li>
             <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="cuentas"><i class="bi bi-bank"></i> Cuentas</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="transferencias"><i class="bi bi-arrow-left-right"></i> Transferencias</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link rounded-pill" href="#" data-section="metas"><i class="bi bi-bullseye"></i> Metas</a>
             </li>
             <li class="nav-item">
@@ -213,6 +219,9 @@
             </li>
             <li class="nav-item">
               <a class="nav-link rounded-pill" href="#" data-section="analisis"><i class="bi bi-graph-up-arrow"></i> Análisis</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link rounded-pill" href="#" data-section="calendario"><i class="bi bi-calendar3"></i> Calendario</a>
             </li>
             <li class="nav-item">
               <a class="nav-link rounded-pill" href="#" data-section="perfil"><i class="bi bi-person-circle"></i> Perfil</a>
@@ -245,28 +254,28 @@
           <div class="col-6 col-xl-3">
             <div class="stat-card stat-balance" role="button" data-navigate="dashboard">
               <div class="stat-card-icon"><i class="bi bi-wallet2"></i></div>
-              <p class="stat-card-label">Balance del mes</p>
+              <p class="stat-card-label">Balance del mes<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Ingresos menos gastos y ahorro del mes actual">?</span></p>
               <h4 class="stat-card-value" id="balance">$0.00</h4>
             </div>
           </div>
           <div class="col-6 col-xl-3">
             <div class="stat-card stat-ingresos" role="button" data-navigate="ingresos">
               <div class="stat-card-icon"><i class="bi bi-arrow-down-circle"></i></div>
-              <p class="stat-card-label">Ingresos</p>
+              <p class="stat-card-label">Ingresos<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Total de dinero recibido en el mes actual">?</span></p>
               <h4 class="stat-card-value" id="total-ingresos">$0.00</h4>
             </div>
           </div>
           <div class="col-6 col-xl-3">
             <div class="stat-card stat-gastos" role="button" data-navigate="gastos">
               <div class="stat-card-icon"><i class="bi bi-arrow-up-circle"></i></div>
-              <p class="stat-card-label">Gastos</p>
+              <p class="stat-card-label">Gastos<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Total de dinero gastado en el mes actual">?</span></p>
               <h4 class="stat-card-value" id="total-gastos">$0.00</h4>
             </div>
           </div>
           <div class="col-6 col-xl-3">
             <div class="stat-card stat-ahorro" role="button" data-navigate="metas">
               <div class="stat-card-icon"><i class="bi bi-piggy-bank"></i></div>
-              <p class="stat-card-label">Ahorrado</p>
+              <p class="stat-card-label">Ahorrado<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Suma total acumulada en todas tus metas de ahorro">?</span></p>
               <h4 class="stat-card-value" id="total-ahorro">$0.00</h4>
             </div>
           </div>
@@ -277,7 +286,7 @@
             <div class="insight-card">
               <i class="bi bi-trophy text-warning"></i>
               <div>
-                <p class="small text-muted mb-0">Mayor gasto</p>
+                <p class="small text-muted mb-0">Mayor gasto<span class="help-icon" data-bs-toggle="tooltip" title="Categoria donde mas gastaste este mes">?</span></p>
                 <p class="fw-semibold mb-0" id="top-category">-</p>
               </div>
             </div>
@@ -286,7 +295,7 @@
             <div class="insight-card">
               <i class="bi bi-graph-up text-success"></i>
               <div>
-                <p class="small text-muted mb-0">Promedio mensual</p>
+                <p class="small text-muted mb-0">Promedio mensual<span class="help-icon" data-bs-toggle="tooltip" title="Promedio de gastos por mes basado en tu historial completo">?</span></p>
                 <p class="fw-semibold mb-0" id="avg-monthly">$0.00</p>
               </div>
             </div>
@@ -295,7 +304,7 @@
             <div class="insight-card">
               <i class="bi bi-percent text-primary"></i>
               <div>
-                <p class="small text-muted mb-0">Tasa de ahorro</p>
+                <p class="small text-muted mb-0">Tasa de ahorro<span class="help-icon" data-bs-toggle="tooltip" title="Porcentaje de tus ingresos destinado al ahorro">?</span></p>
                 <p class="fw-semibold mb-0" id="savings-rate">0%</p>
               </div>
             </div>
@@ -351,7 +360,7 @@
       <!-- Ingresos -->
       <section id="section-ingresos" class="section d-none">
         <div class="section-top">
-          <h4 class="fw-bold"><i class="bi bi-arrow-down-circle text-success me-2"></i>Ingresos</h4>
+          <h4 class="fw-bold"><i class="bi bi-arrow-down-circle text-success me-2"></i>Ingresos<span class="help-icon" data-bs-toggle="tooltip" title="Registra el dinero que recibes: salario, ventas, freelance, etc.">?</span></h4>
           <button class="btn btn-success rounded-pill" id="btn-nuevo-ingreso"><i class="bi bi-plus-lg"></i> Nuevo</button>
         </div>
         <div class="content-card">
@@ -364,7 +373,7 @@
       <!-- Gastos -->
       <section id="section-gastos" class="section d-none">
         <div class="section-top">
-          <h4 class="fw-bold"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Gastos</h4>
+          <h4 class="fw-bold"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Gastos<span class="help-icon" data-bs-toggle="tooltip" title="Registra tus gastos diarios organizados por categoria y metodo de pago.">?</span></h4>
           <button class="btn btn-danger rounded-pill" id="btn-nuevo-gasto"><i class="bi bi-plus-lg"></i> Nuevo</button>
         </div>
         <div class="content-card">
@@ -377,7 +386,7 @@
       <!-- Categorías -->
       <section id="section-categorias" class="section d-none">
         <div class="section-top">
-          <h4 class="fw-bold"><i class="bi bi-tags text-primary me-2"></i>Categorías</h4>
+          <h4 class="fw-bold"><i class="bi bi-tags text-primary me-2"></i>Categorías<span class="help-icon" data-bs-toggle="tooltip" title="Organiza tus movimientos en categorias como Alimentacion, Transporte, Salario, etc.">?</span></h4>
           <div class="d-flex gap-2 align-items-center">
             <select class="form-select form-select-sm rounded-pill" id="filtro-cat-tipo" style="width: auto;">
               <option value="">Todas</option>
@@ -394,10 +403,37 @@
         </div>
       </section>
 
+      <!-- Cuentas -->
+      <section id="section-cuentas" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-bank text-primary me-2"></i>Mis Cuentas<span class="help-icon" data-bs-toggle="tooltip" title="Administra tus cuentas financieras: efectivo, bancos, tarjetas. El saldo se actualiza al registrar ingresos o gastos.">?</span></h4>
+          <button class="btn btn-primary rounded-pill" id="btn-nueva-cuenta"><i class="bi bi-plus-lg"></i> Nueva Cuenta</button>
+        </div>
+        <div class="row g-3 mb-3" id="cuentas-resumen"></div>
+        <div class="content-card">
+          <div class="content-card-body" id="lista-cuentas">
+            <p class="text-muted text-center fst-italic py-4">No hay cuentas registradas</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transferencias -->
+      <section id="section-transferencias" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-arrow-left-right text-info me-2"></i>Transferencias<span class="help-icon" data-bs-toggle="tooltip" title="Mueve dinero entre tus cuentas sin que se registre como ingreso o gasto.">?</span></h4>
+          <button class="btn btn-info rounded-pill text-white" id="btn-nueva-transferencia"><i class="bi bi-plus-lg"></i> Nueva</button>
+        </div>
+        <div class="content-card">
+          <div class="content-card-body" id="lista-transferencias">
+            <p class="text-muted text-center fst-italic py-4">No hay transferencias registradas</p>
+          </div>
+        </div>
+      </section>
+
       <!-- Metas -->
       <section id="section-metas" class="section d-none">
         <div class="section-top">
-          <h4 class="fw-bold"><i class="bi bi-bullseye text-warning me-2"></i>Metas de Ahorro</h4>
+          <h4 class="fw-bold"><i class="bi bi-bullseye text-warning me-2"></i>Metas de Ahorro<span class="help-icon" data-bs-toggle="tooltip" title="Define objetivos financieros y registra aportes para ver tu progreso hacia cada meta.">?</span></h4>
           <button class="btn btn-warning rounded-pill text-dark" id="btn-nueva-meta"><i class="bi bi-plus-lg"></i> Nueva</button>
         </div>
         <div id="lista-metas" class="row g-3">
@@ -407,7 +443,7 @@
 
       <!-- Analisis Financiero -->
       <section id="section-analisis" class="section d-none">
-        <h4 class="fw-bold mb-4"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Análisis Financiero</h4>
+        <h4 class="fw-bold mb-4"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Análisis Financiero<span class="help-icon" data-bs-toggle="tooltip" title="Comparacion automatica contra el mes anterior con variaciones porcentuales y predicciones de ahorro.">?</span></h4>
 
         <!-- Resumen textual -->
         <div class="content-card mb-4">
@@ -448,10 +484,55 @@
         </div>
       </section>
 
+      <!-- Calendario Financiero -->
+      <section id="section-calendario" class="section d-none">
+        <div class="section-top">
+          <h4 class="fw-bold"><i class="bi bi-calendar3 text-primary me-2"></i>Calendario Financiero<span class="help-icon" data-bs-toggle="tooltip" title="Visualiza tus movimientos financieros día a día en formato calendario.">?</span></h4>
+        </div>
+
+        <!-- Controles del calendario -->
+        <div class="content-card mb-3">
+          <div class="content-card-body py-2">
+            <div class="d-flex justify-content-between align-items-center">
+              <button class="btn btn-sm btn-outline-primary rounded-circle" id="cal-prev"><i class="bi bi-chevron-left"></i></button>
+              <h5 class="fw-bold mb-0" id="cal-month-title">Junio 2026</h5>
+              <button class="btn btn-sm btn-outline-primary rounded-circle" id="cal-next"><i class="bi bi-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leyenda -->
+        <div class="d-flex gap-3 mb-3 small">
+          <span><span class="cal-dot cal-dot-ingreso"></span> Ingresos</span>
+          <span><span class="cal-dot cal-dot-gasto"></span> Gastos</span>
+          <span><span class="cal-dot cal-dot-transferencia"></span> Transferencias</span>
+        </div>
+
+        <!-- Calendario grid -->
+        <div class="content-card">
+          <div class="content-card-body p-2">
+            <div class="cal-grid" id="cal-grid"></div>
+          </div>
+        </div>
+
+        <!-- Total mensual -->
+        <div class="row g-3 mt-3">
+          <div class="col-4">
+            <div class="insight-card"><i class="bi bi-arrow-down-circle text-success"></i><div><p class="small text-muted mb-0">Ingresos</p><p class="fw-bold mb-0" id="cal-total-ingresos">$0</p></div></div>
+          </div>
+          <div class="col-4">
+            <div class="insight-card"><i class="bi bi-arrow-up-circle text-danger"></i><div><p class="small text-muted mb-0">Gastos</p><p class="fw-bold mb-0" id="cal-total-gastos">$0</p></div></div>
+          </div>
+          <div class="col-4">
+            <div class="insight-card"><i class="bi bi-arrow-left-right text-info"></i><div><p class="small text-muted mb-0">Transferencias</p><p class="fw-bold mb-0" id="cal-total-transferencias">$0</p></div></div>
+          </div>
+        </div>
+      </section>
+
       <!-- Presupuestos -->
       <section id="section-presupuestos" class="section d-none">
         <div class="section-top">
-          <h4 class="fw-bold"><i class="bi bi-speedometer2 text-info me-2"></i>Presupuestos Mensuales</h4>
+          <h4 class="fw-bold"><i class="bi bi-speedometer2 text-info me-2"></i>Presupuestos Mensuales<span class="help-icon" data-bs-toggle="tooltip" title="Define limites de gasto por categoria. Recibe alertas al acercarte o exceder el limite.">?</span></h4>
           <button class="btn btn-info rounded-pill text-white" id="btn-nuevo-presupuesto"><i class="bi bi-plus-lg"></i> Nuevo</button>
         </div>
         <div id="lista-presupuestos" class="row g-3">
@@ -503,6 +584,9 @@
                   </div>
                   <button type="submit" class="btn btn-primary rounded-pill px-4">
                     <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary rounded-pill px-4 ms-2" onclick="resetOnboarding()">
+                    <i class="bi bi-info-circle me-1"></i>Ver tutorial
                   </button>
                 </form>
               </div>
@@ -586,6 +670,38 @@
             <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalle Dia -->
+  <div class="modal fade" id="calDayModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="cal-day-title">Detalle del día</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="cal-day-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Onboarding -->
+  <div class="modal fade" id="onboardingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+        <div class="onboarding-progress">
+          <div class="onboarding-progress-bar" id="onboarding-bar"></div>
+        </div>
+        <div class="modal-body p-4 text-center" id="onboarding-body"></div>
+        <div class="modal-footer border-0 justify-content-between px-4 pb-4">
+          <button type="button" class="btn btn-link text-muted btn-sm" id="onboarding-skip">Omitir</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-none" id="onboarding-prev"><i class="bi bi-arrow-left"></i> Atrás</button>
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-4" id="onboarding-next">Siguiente <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

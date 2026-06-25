@@ -2,35 +2,19 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const pool = require('../config/db');
 const { validarUsuario } = require('../middlewares/validacionMiddleware');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'finanya_secret_key_2024';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
-// Configure multer for avatar uploads
-const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'avatars');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar-${req.params.id}-${Date.now()}${ext}`);
-  }
-});
-
+// Multer en memoria (para guardar como Base64 en BD)
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
   fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) cb(null, true);
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
     else cb(new Error('Solo se permiten imágenes (jpg, png, gif, webp)'));
   }
 });
@@ -226,7 +210,7 @@ router.put('/perfil/:id', async (req, res) => {
   }
 });
 
-// Subir avatar
+// Subir avatar (guarda como Base64 en la BD)
 router.post('/perfil/:id/avatar', upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
@@ -234,18 +218,13 @@ router.post('/perfil/:id/avatar', upload.single('avatar'), async (req, res) => {
     }
 
     const id_usuario = req.params.id;
-    const avatar_url = `/uploads/avatars/${req.file.filename}`;
 
-    // Eliminar avatar anterior si existe
-    const resultado = await pool.query('SELECT avatar_url FROM usuarios WHERE id_usuario = $1', [id_usuario]);
-    if (resultado.rows.length > 0 && resultado.rows[0].avatar_url) {
-      const oldPath = path.join(__dirname, '..', '..', 'public', resultado.rows[0].avatar_url);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-    }
+    // Convertir imagen a Base64
+    const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-    await pool.query('UPDATE usuarios SET avatar_url = $1 WHERE id_usuario = $2', [avatar_url, id_usuario]);
+    await pool.query('UPDATE usuarios SET avatar_url = $1 WHERE id_usuario = $2', [base64, id_usuario]);
 
-    res.json({ mensaje: 'Avatar actualizado', avatar_url });
+    res.json({ mensaje: 'Avatar actualizado', avatar_url: base64 });
   } catch (error) {
     console.error('Error al subir avatar:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

@@ -1,6 +1,6 @@
 # Finanya - Gestion Financiera Personal
 
-Aplicacion web completa para gestionar ingresos, gastos, ahorros, presupuestos y metas financieras personales. Incluye panel de administracion, analisis financiero, graficas interactivas y modo oscuro.
+Aplicacion web completa para gestionar ingresos, gastos, ahorros, presupuestos, cuentas financieras y transferencias. Incluye panel de administracion, analisis financiero, calendario interactivo, graficas, onboarding guiado y modo oscuro.
 
 URL de produccion: https://finanya.onrender.com
 
@@ -16,7 +16,7 @@ URL de produccion: https://finanya.onrender.com
 - Backend: Node.js + Express
 - Base de datos: PostgreSQL (Render)
 - Autenticacion: JWT + bcrypt
-- Subida de archivos: Multer
+- Subida de archivos: Multer (almacenamiento en BD como Base64)
 - Hosting: Render
 
 ---
@@ -25,50 +25,63 @@ URL de produccion: https://finanya.onrender.com
 
 ### Usuarios
 - Registro con validacion completa
-- Inicio de sesion con JWT
-- Edicion de perfil (nombre, contrasena)
-- Foto de perfil (subida de imagen)
+- Inicio de sesion con JWT (24h de expiracion)
+- Edicion de perfil (nombre y contrasena)
+- Foto de perfil (almacenada como Base64 en la BD, persiste en Render)
 - Roles: usuario y administrador
-- Categorias por defecto al registrarse
+- Categorias por defecto al registrarse (13 categorias)
+- Onboarding guiado para nuevos usuarios (7 pasos)
 
 ### Ingresos
 - Crear, editar, eliminar ingresos
-- Listar con orden por fecha
 - Asociar a categoria de tipo ingreso
-- Validacion de montos y campos
+- Asociar a cuenta financiera (opcional, actualiza saldo)
+- Listar con orden por fecha
 
 ### Gastos
 - Crear, editar, eliminar gastos
 - Metodo de pago seleccionable (Efectivo, Tarjeta de debito, Tarjeta de credito, Transferencia, Pago movil)
 - Asociar a categoria de tipo gasto
-- Validacion completa
+- Asociar a cuenta financiera (opcional, actualiza saldo)
 
 ### Categorias
 - Crear, editar, eliminar categorias
 - Tipos: ingreso o gasto
 - Filtro por tipo en la interfaz
 - Proteccion contra eliminacion si tiene registros asociados
-- 13 categorias por defecto al registrarse
+
+### Cuentas Financieras
+- Crear cuentas (efectivo, banco, tarjeta, ahorro, otro)
+- Saldo inicial configurable
+- Saldo actual se actualiza automaticamente con ingresos, gastos y transferencias
+- Editar y eliminar cuentas
+- Vista de saldo total
+
+### Transferencias entre Cuentas
+- Mover dinero entre cuentas del mismo usuario
+- No se registra como ingreso ni gasto
+- Validacion de saldo suficiente en cuenta origen
+- No permite transferir a la misma cuenta
+- Eliminar transferencia revierte los saldos automaticamente
 
 ### Metas de Ahorro
 - Crear metas con nombre, monto objetivo y fechas
 - Registrar aportes hacia cada meta
+- Editar nombre, monto objetivo y monto ahorrado
 - Barra de progreso visual con porcentaje
 - Los aportes se restan del balance disponible
 
 ### Presupuestos Mensuales
 - Crear presupuesto por categoria de gasto
 - Definir limite mensual
-- Calculo automatico del gasto actual de la categoria
+- Calculo automatico del gasto actual
 - Porcentaje consumido con barra de progreso
-- Alerta visual al 80% (amarillo) y 100% (rojo)
+- Alerta visual al 80% (amarillo) y al 100% (rojo)
 - Resumen de presupuestos en el dashboard
 
 ### Dashboard
 - Balance del mes (ingresos - gastos - ahorro)
-- Total de ingresos del mes
-- Total de gastos del mes
-- Total ahorrado en metas
+- Total de ingresos, gastos y ahorrado
 - Categoria con mayor gasto
 - Promedio mensual de gastos
 - Tasa de ahorro
@@ -81,48 +94,46 @@ URL de produccion: https://finanya.onrender.com
 
 ### Analisis Financiero
 - Comparacion contra el mes anterior (tabla)
-- Variacion porcentual de ingresos
-- Variacion porcentual de gastos
+- Variacion porcentual de ingresos y gastos
 - Categoria con mayor crecimiento de gasto
 - Promedio mensual de ingresos y gastos
 - Prediccion de ahorro anual
 - Resumen automatico con frases descriptivas
 - Detalle por categoria con variaciones
 
+### Calendario Financiero
+- Calendario mensual interactivo
+- Indicadores por dia (verde=ingresos, rojo=gastos, azul=transferencias)
+- Navegacion entre meses
+- Dia actual resaltado
+- Clic en un dia muestra detalle con lista de movimientos y balance
+- Totales del mes visibles
+
 ### Panel de Administracion
 - Acceso exclusivo para usuarios con rol admin
-- Dashboard administrativo:
-  - Total de usuarios registrados
-  - Usuarios activos
-  - Total de ingresos registrados en el sistema
-  - Total de gastos registrados en el sistema
-  - Total de metas creadas
-  - Usuarios mas activos
-  - Actividad reciente del sistema
-- Gestion de usuarios:
-  - Listar todos los usuarios
-  - Buscar por nombre o correo
-  - Activar / desactivar usuario
-  - Cambiar rol (usuario / admin)
-  - Eliminar usuario
-- Registro de actividad (log de acciones)
+- Dashboard: total usuarios, activos, ingresos, gastos, metas
+- Usuarios mas activos
+- Actividad reciente (log de acciones)
+- Gestion de usuarios: listar, buscar, activar/desactivar, cambiar rol, eliminar
+- Registro de actividad del sistema
 
 ### Interfaz y UX
-- Paleta principal azul cielo
-- Diseno moderno tipo dashboard
-- Bordes redondeados (12px-16px)
-- Sombras suaves en tarjetas
+- Paleta azul cielo (#38BDF8)
+- Diseno moderno tipo fintech
+- Bordes redondeados (12-16px)
+- Sombras suaves progresivas
 - Tipografia Montserrat
-- Espaciado amplio
-- Animaciones suaves al pasar el mouse
+- Animaciones suaves al hover
 - Diseno responsive (movil, tablet, escritorio)
 - Modo oscuro / claro con toggle
-- Landing page con hero, features y footer
+- Landing page con hero animado, features y footer
 - Toasts de exito/error/advertencia
 - Modal de confirmacion antes de eliminar
-- Avatar de usuario con inicial o foto
-- Iconos Bootstrap Icons (sin emojis)
+- Ayuda contextual con iconos "?" y tooltips
+- Onboarding guiado de 7 pasos
+- Avatar con inicial o foto
 - Boton de mostrar/ocultar contrasena
+- Scrollbar personalizado
 
 ---
 
@@ -131,32 +142,33 @@ URL de produccion: https://finanya.onrender.com
 ```
 Finanya-1/
 ├── database/
-│   ├── schema.sql          # Esquema completo de la base de datos
-│   └── migrate.js          # Script unico de migracion
+│   ├── schema.sql              # Esquema completo de la base de datos
+│   └── migrate.js              # Script unico de migracion
 ├── public/
-│   ├── css/styles.css      # Estilos personalizados
-│   ├── js/app.js           # Logica completa del frontend
-│   ├── index.html          # Pagina principal (SPA)
-│   └── uploads/avatars/    # Fotos de perfil (ignorado en git)
+│   ├── css/styles.css          # Estilos personalizados (fintech theme)
+│   ├── js/app.js               # Logica completa del frontend
+│   └── index.html              # Pagina principal (SPA)
 ├── src/
 │   ├── config/
-│   │   └── db.js           # Conexion a PostgreSQL
+│   │   └── db.js               # Conexion a PostgreSQL
 │   ├── middlewares/
 │   │   ├── autenticacionMiddleware.js  # Verificacion JWT
-│   │   ├── autorizacionMiddleware.js   # Verificacion rol admin
+│   │   ├── autorizacionMiddleware.js   # Verificacion rol admin (403)
 │   │   ├── validacionMiddleware.js     # Validacion de datos
 │   │   ├── erroresMiddleware.js        # Manejo global de errores
 │   │   └── registroMiddleware.js       # Logging de peticiones
 │   ├── routes/
-│   │   ├── auth.js         # Registro, login, perfil, avatar
-│   │   ├── categorias.js   # CRUD categorias
-│   │   ├── ingresos.js     # CRUD ingresos
-│   │   ├── gastos.js       # CRUD gastos
-│   │   ├── metas.js        # CRUD metas y aportes
-│   │   ├── presupuestos.js # CRUD presupuestos
-│   │   └── admin.js        # Panel administrativo
-│   └── server.js           # Servidor Express
-├── .env                    # Variables de entorno (no se sube)
+│   │   ├── auth.js             # Registro, login, perfil, avatar
+│   │   ├── categorias.js       # CRUD categorias
+│   │   ├── ingresos.js         # CRUD ingresos + actualizacion de saldo
+│   │   ├── gastos.js           # CRUD gastos + actualizacion de saldo
+│   │   ├── cuentas.js          # CRUD cuentas financieras
+│   │   ├── transferencias.js   # Transferencias entre cuentas
+│   │   ├── metas.js            # CRUD metas y aportes
+│   │   ├── presupuestos.js     # CRUD presupuestos con alertas
+│   │   └── admin.js            # Panel administrativo
+│   └── server.js               # Servidor Express con middlewares
+├── .env                        # Variables de entorno (no se sube)
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -168,8 +180,8 @@ Finanya-1/
 
 1. Clonar el repositorio:
 ```bash
-git clone <url-del-repositorio>
-cd Finanya
+git clone https://github.com/AbelGod27/Finanya.git
+cd Finanya-1
 ```
 
 2. Instalar dependencias:
@@ -177,7 +189,7 @@ cd Finanya
 npm install
 ```
 
-3. Crear archivo `.env` en la raiz con:
+3. Crear archivo `.env` en la raiz:
 ```
 DATABASE_URL=postgresql://usuario:password@host:5432/nombre_db
 JWT_SECRET=tu_clave_secreta_aqui
@@ -195,7 +207,7 @@ node database/migrate.js
 npm start
 ```
 
-6. Abrir en el navegador: https://finanya.onrender.com
+6. Abrir en el navegador: http://localhost:3000
 
 ---
 
@@ -212,48 +224,32 @@ npm start
 
 ## API Endpoints
 
-### Publicos (sin autenticacion)
+### Publicos
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | POST | /api/auth/registro | Registrar usuario |
 | POST | /api/auth/login | Iniciar sesion (devuelve JWT) |
 | GET | /api/health | Health check |
 
-### Protegidos (requieren JWT)
+### Protegidos (JWT)
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | GET | /api/auth/perfil/:id | Obtener perfil |
 | PUT | /api/auth/perfil/:id | Editar perfil |
 | POST | /api/auth/perfil/:id/avatar | Subir foto de perfil |
-| GET | /api/categorias/usuario/:id | Listar categorias |
-| POST | /api/categorias | Crear categoria |
-| PUT | /api/categorias/:id | Editar categoria |
-| DELETE | /api/categorias/:id | Eliminar categoria |
-| GET | /api/ingresos/usuario/:id | Listar ingresos |
-| POST | /api/ingresos | Crear ingreso |
-| PUT | /api/ingresos/:id | Editar ingreso |
-| DELETE | /api/ingresos/:id | Eliminar ingreso |
-| GET | /api/gastos/usuario/:id | Listar gastos |
-| POST | /api/gastos | Crear gasto |
-| PUT | /api/gastos/:id | Editar gasto |
-| DELETE | /api/gastos/:id | Eliminar gasto |
-| GET | /api/metas/usuario/:id | Listar metas |
-| GET | /api/metas/:id | Ver meta con aportes |
-| POST | /api/metas | Crear meta |
-| PUT | /api/metas/:id | Editar meta |
-| DELETE | /api/metas/:id | Eliminar meta |
-| POST | /api/metas/:id/aportes | Registrar aporte |
-| GET | /api/presupuestos/usuario/:id | Listar presupuestos |
-| POST | /api/presupuestos | Crear presupuesto |
-| PUT | /api/presupuestos/:id | Editar presupuesto |
-| DELETE | /api/presupuestos/:id | Eliminar presupuesto |
+| GET/POST/PUT/DELETE | /api/categorias/* | CRUD categorias |
+| GET/POST/PUT/DELETE | /api/ingresos/* | CRUD ingresos |
+| GET/POST/PUT/DELETE | /api/gastos/* | CRUD gastos |
+| GET/POST/PUT/DELETE | /api/cuentas/* | CRUD cuentas |
+| GET/POST/DELETE | /api/transferencias/* | Transferencias |
+| GET/POST/PUT/DELETE | /api/metas/* | CRUD metas y aportes |
+| GET/POST/PUT/DELETE | /api/presupuestos/* | CRUD presupuestos |
 
-### Administrativos (requieren JWT + rol admin)
+### Administrativos (JWT + admin)
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | GET | /api/admin/dashboard | Estadisticas del sistema |
 | GET | /api/admin/usuarios | Listar usuarios |
-| GET | /api/admin/usuarios/:id | Ver perfil de usuario |
 | PUT | /api/admin/usuarios/:id | Editar usuario |
 | PATCH | /api/admin/usuarios/:id/estado | Activar/desactivar |
 | PATCH | /api/admin/usuarios/:id/rol | Cambiar rol |
@@ -267,9 +263,9 @@ npm start
 | Archivo | Funcion |
 |---------|---------|
 | autenticacionMiddleware.js | Verifica JWT del header Authorization Bearer |
-| autorizacionMiddleware.js | Verifica que el usuario tenga rol admin (403 si no) |
+| autorizacionMiddleware.js | Verifica rol admin, retorna 403 si no |
 | validacionMiddleware.js | Valida datos de registro, ingresos, gastos y metas |
-| erroresMiddleware.js | Captura excepciones y responde JSON estandarizado |
+| erroresMiddleware.js | Captura excepciones, responde JSON estandarizado |
 | registroMiddleware.js | Log en consola de cada peticion (metodo, ruta, tiempo) |
 
 ---
@@ -281,32 +277,27 @@ npm start
 3. Configurar:
    - Build Command: `npm install`
    - Start Command: `npm start`
-   - Variables de entorno: DATABASE_URL (URL interna), JWT_SECRET, JWT_EXPIRES_IN
-4. Ejecutar migracion desde la consola de Render o localmente con la URL externa
+   - Variables: DATABASE_URL (URL interna), JWT_SECRET, JWT_EXPIRES_IN
+4. Ejecutar migracion desde consola de Render o con URL externa
 
 ---
 
 ## Acceso como administrador
 
-El primer usuario registrado se configura automaticamente como administrador al ejecutar la migracion. Para acceder al panel:
-
-1. Iniciar sesion con la cuenta de administrador
-2. En la barra de navegacion aparece el boton "Admin" (icono de escudo)
-3. Hacer clic para acceder al panel de administracion
-4. Desde ahi se pueden gestionar usuarios, ver estadisticas y actividad
+El primer usuario se configura como admin al ejecutar la migracion. Al iniciar sesion aparece el boton "Admin" en la barra de navegacion para acceder al panel de gestion.
 
 ---
 
 ## Seguridad
 
 - Contrasenas cifradas con bcrypt (10 salt rounds)
-- Autenticacion basada en JWT con expiracion configurable
-- Consultas parametrizadas para prevenir inyeccion SQL
+- JWT con expiracion configurable
+- Consultas parametrizadas (prevencion SQL injection)
 - Validacion de datos en servidor y cliente
 - Middleware de autorizacion por rol
 - Variables de entorno para credenciales
-- Imagenes subidas excluidas del repositorio via .gitignore
-- Rate limiting en endpoints sensibles
+- Fotos de perfil como Base64 en BD (sin archivos en disco)
+- Imagenes excluidas del repositorio via .gitignore
 
 ---
 

@@ -223,8 +223,11 @@ $$('.nav-link[data-section]').forEach(link => {
     if (section === 'ingresos') loadIngresos();
     if (section === 'gastos') loadGastos();
     if (section === 'categorias') loadCategorias();
+    if (section === 'cuentas') loadCuentas();
+    if (section === 'transferencias') loadTransferencias();
     if (section === 'metas') loadMetas();
     if (section === 'analisis') loadAnalisis();
+    if (section === 'calendario') loadCalendario();
     if (section === 'presupuestos') loadPresupuestos();
     if (section === 'perfil') loadPerfil();
     const navCollapse = document.querySelector('.navbar-collapse');
@@ -252,8 +255,11 @@ function navigateToSection(section) {
   if (section === 'ingresos') loadIngresos();
   if (section === 'gastos') loadGastos();
   if (section === 'categorias') loadCategorias();
+  if (section === 'cuentas') loadCuentas();
+  if (section === 'transferencias') loadTransferencias();
   if (section === 'metas') loadMetas();
   if (section === 'analisis') loadAnalisis();
+  if (section === 'calendario') loadCalendario();
   if (section === 'presupuestos') loadPresupuestos();
   if (section === 'perfil') loadPerfil();
 }
@@ -304,6 +310,7 @@ function showApp() {
   loadCategorias();
   loadUserAvatar();
   checkAdmin();
+  checkOnboarding();
 }
 
 async function loadUserAvatar() {
@@ -664,16 +671,23 @@ window.deleteCategoria = async (id) => {
 };
 
 // ===== INGRESOS =====
-$('#btn-nuevo-ingreso').addEventListener('click', () => {
+$('#btn-nuevo-ingreso').addEventListener('click', async () => {
   const catIngresos = categorias.filter(c => c.tipo === 'ingreso');
   if (catIngresos.length === 0) { showToast('Primero crea una categoría de tipo ingreso', 'warning'); return; }
+  // Cargar cuentas para el selector
+  let userCuentas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  const cuentaOpts = [{ value: '', label: 'Sin cuenta' }, ...userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }))];
+
   openModal('Nuevo Ingreso', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
     { name: 'descripcion', label: 'Descripción', required: true, placeholder: 'Ej: Salario mensual' },
     { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: new Date().toISOString().split('T')[0] },
-    { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catIngresos.map(c => ({ value: c.id_categoria, label: c.nombre })) }
+    { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catIngresos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
+    { name: 'id_cuenta', label: 'Cuenta (opcional)', type: 'select', options: cuentaOpts }
   ], async (data) => {
     try {
+      if (!data.id_cuenta) delete data.id_cuenta;
       await request('/ingresos', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadIngresos();
@@ -720,9 +734,13 @@ window.deleteIngreso = async (id) => {
 };
 
 // ===== GASTOS =====
-$('#btn-nuevo-gasto').addEventListener('click', () => {
+$('#btn-nuevo-gasto').addEventListener('click', async () => {
   const catGastos = categorias.filter(c => c.tipo === 'gasto');
   if (catGastos.length === 0) { showToast('Primero crea una categoría de tipo gasto', 'warning'); return; }
+  let userCuentas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  const cuentaOpts = [{ value: '', label: 'Sin cuenta' }, ...userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }))];
+
   openModal('Nuevo Gasto', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
     { name: 'descripcion', label: 'Descripción', required: true, placeholder: 'Ej: Supermercado' },
@@ -734,9 +752,11 @@ $('#btn-nuevo-gasto').addEventListener('click', () => {
       { value: 'Transferencia', label: 'Transferencia' },
       { value: 'Pago móvil', label: 'Pago móvil' }
     ]},
-    { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catGastos.map(c => ({ value: c.id_categoria, label: c.nombre })) }
+    { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catGastos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
+    { name: 'id_cuenta', label: 'Cuenta (opcional)', type: 'select', options: cuentaOpts }
   ], async (data) => {
     try {
+      if (!data.id_cuenta) delete data.id_cuenta;
       await request('/gastos', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadGastos();
@@ -779,6 +799,171 @@ window.deleteGasto = async (id) => {
       loadGastos();
       loadDashboard();
       showToast('Gasto eliminado', 'success');
+    } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+  });
+};
+
+// ===== CUENTAS =====
+let cuentas = [];
+
+$('#btn-nueva-cuenta').addEventListener('click', () => {
+  openModal('Nueva Cuenta', [
+    { name: 'nombre', label: 'Nombre', required: true, placeholder: 'Ej: Banco Principal' },
+    { name: 'tipo', label: 'Tipo', type: 'select', required: true, options: [
+      { value: 'efectivo', label: 'Efectivo', selected: true },
+      { value: 'banco', label: 'Banco' },
+      { value: 'tarjeta', label: 'Tarjeta' },
+      { value: 'ahorro', label: 'Ahorro' },
+      { value: 'otro', label: 'Otro' }
+    ]},
+    { name: 'saldo_inicial', label: 'Saldo inicial', type: 'number', required: true, step: '0.01', min: '0', value: '0', placeholder: '0.00' },
+    { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Cuenta de nómina' }
+  ], async (data) => {
+    try {
+      await request('/cuentas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
+      closeModal();
+      loadCuentas();
+      showToast('Cuenta creada', 'success');
+    } catch (err) { showToast(err.error || 'Error al crear cuenta', 'danger'); }
+  });
+});
+
+async function loadCuentas() {
+  try {
+    cuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`);
+    renderCuentas();
+  } catch (err) { console.error('Error cargando cuentas:', err); }
+}
+
+function renderCuentas() {
+  const container = $('#lista-cuentas');
+  const resumen = $('#cuentas-resumen');
+
+  if (cuentas.length === 0) {
+    container.innerHTML = '<p class="text-muted text-center fst-italic py-4">No hay cuentas registradas</p>';
+    resumen.innerHTML = '';
+    return;
+  }
+
+  const total = cuentas.reduce((s, c) => s + Number(c.saldo_actual), 0);
+  const tipoIconos = { efectivo: 'bi-cash', banco: 'bi-bank', tarjeta: 'bi-credit-card', ahorro: 'bi-piggy-bank', otro: 'bi-wallet2' };
+
+  resumen.innerHTML = `
+    <div class="col-12">
+      <div class="stat-card stat-balance">
+        <div class="stat-card-icon"><i class="bi bi-bank"></i></div>
+        <p class="stat-card-label">Saldo total en cuentas</p>
+        <h4 class="stat-card-value">${formatMoney(total)}</h4>
+      </div>
+    </div>`;
+
+  container.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Cuenta</th><th>Tipo</th><th>Saldo</th><th>Acciones</th></tr></thead>
+    <tbody>${cuentas.map(c => `
+      <tr>
+        <td><i class="${tipoIconos[c.tipo] || 'bi-wallet2'} me-2 text-primary"></i><span class="fw-medium">${c.nombre}</span>${c.descripcion ? `<br><small class="text-muted">${c.descripcion}</small>` : ''}</td>
+        <td><span class="badge rounded-pill bg-primary bg-opacity-10 text-primary text-uppercase">${c.tipo}</span></td>
+        <td class="fw-bold ${Number(c.saldo_actual) >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(c.saldo_actual)}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editarCuenta(${c.id_cuenta}, '${c.nombre.replace(/'/g, "\\'")}', '${c.tipo}', '${c.descripcion || ''}')" title="Editar"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarCuenta(${c.id_cuenta})" title="Eliminar"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>
+    `).join('')}</tbody>
+  </table></div>`;
+}
+
+window.editarCuenta = (id, nombre, tipo, descripcion) => {
+  openModal('Editar Cuenta', [
+    { name: 'nombre', label: 'Nombre', required: true, value: nombre },
+    { name: 'tipo', label: 'Tipo', type: 'select', required: true, options: [
+      { value: 'efectivo', label: 'Efectivo', selected: tipo === 'efectivo' },
+      { value: 'banco', label: 'Banco', selected: tipo === 'banco' },
+      { value: 'tarjeta', label: 'Tarjeta', selected: tipo === 'tarjeta' },
+      { value: 'ahorro', label: 'Ahorro', selected: tipo === 'ahorro' },
+      { value: 'otro', label: 'Otro', selected: tipo === 'otro' }
+    ]},
+    { name: 'descripcion', label: 'Descripción', value: descripcion }
+  ], async (data) => {
+    try {
+      await request(`/cuentas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      closeModal();
+      loadCuentas();
+      showToast('Cuenta actualizada', 'success');
+    } catch (err) { showToast(err.error || 'Error al editar', 'danger'); }
+  });
+};
+
+window.eliminarCuenta = async (id) => {
+  showConfirm('¿Eliminar esta cuenta?', async () => {
+    try {
+      await request(`/cuentas/${id}`, { method: 'DELETE' });
+      loadCuentas();
+      showToast('Cuenta eliminada', 'success');
+    } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+  });
+};
+
+// ===== TRANSFERENCIAS =====
+$('#btn-nueva-transferencia').addEventListener('click', async () => {
+  let userCuentas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  if (userCuentas.length < 2) { showToast('Necesitas al menos 2 cuentas para transferir', 'warning'); return; }
+
+  const opts = userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }));
+
+  openModal('Nueva Transferencia', [
+    { name: 'id_cuenta_origen', label: 'Cuenta origen', type: 'select', required: true, options: opts },
+    { name: 'id_cuenta_destino', label: 'Cuenta destino', type: 'select', required: true, options: opts },
+    { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
+    { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: new Date().toISOString().split('T')[0] },
+    { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Paso a ahorro' }
+  ], async (data) => {
+    try {
+      await request('/transferencias', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
+      closeModal();
+      loadTransferencias();
+      loadCuentas();
+      loadDashboard();
+      showToast('Transferencia realizada', 'success');
+    } catch (err) { showToast(err.error || 'Error al transferir', 'danger'); }
+  });
+});
+
+async function loadTransferencias() {
+  try {
+    const transferencias = await request(`/transferencias/usuario/${currentUser.id_usuario}`);
+    const container = $('#lista-transferencias');
+    if (transferencias.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center fst-italic py-4">No hay transferencias registradas</p>';
+      return;
+    }
+    container.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Fecha</th><th>Origen</th><th>Destino</th><th>Monto</th><th>Descripción</th><th>Acciones</th></tr></thead>
+      <tbody>${transferencias.map(t => `
+        <tr>
+          <td>${new Date(t.fecha).toLocaleDateString('es-MX')}</td>
+          <td><span class="badge bg-danger bg-opacity-10 text-danger">${t.cuenta_origen_nombre}</span></td>
+          <td><span class="badge bg-success bg-opacity-10 text-success">${t.cuenta_destino_nombre}</span></td>
+          <td class="fw-bold text-primary">${formatMoney(t.monto)}</td>
+          <td class="small text-muted">${t.descripcion || '-'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarTransferencia(${t.id_transferencia})" title="Eliminar y revertir"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+      `).join('')}</tbody>
+    </table></div>`;
+  } catch (err) { console.error('Error cargando transferencias:', err); }
+}
+
+window.eliminarTransferencia = async (id) => {
+  showConfirm('¿Eliminar esta transferencia? Los saldos se revertirán.', async () => {
+    try {
+      await request(`/transferencias/${id}`, { method: 'DELETE' });
+      loadTransferencias();
+      loadCuentas();
+      loadDashboard();
+      showToast('Transferencia eliminada y saldos revertidos', 'success');
     } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
   });
 };
@@ -876,6 +1061,152 @@ window.deleteMeta = async (id) => {
       showToast('Meta eliminada', 'success');
     } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
   });
+};
+
+// ===== CALENDARIO FINANCIERO =====
+let calYear, calMonth;
+let calData = { ingresos: [], gastos: [], transferencias: [] };
+
+function initCalendar() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+initCalendar();
+
+$('#cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  loadCalendario();
+});
+
+$('#cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  loadCalendario();
+});
+
+async function loadCalendario() {
+  try {
+    const [ingresos, gastos, transferencias] = await Promise.all([
+      request(`/ingresos/usuario/${currentUser.id_usuario}`),
+      request(`/gastos/usuario/${currentUser.id_usuario}`),
+      request(`/transferencias/usuario/${currentUser.id_usuario}`).catch(() => [])
+    ]);
+
+    calData = { ingresos, gastos, transferencias };
+    renderCalendario();
+  } catch (err) { console.error('Error cargando calendario:', err); }
+}
+
+function renderCalendario() {
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  $('#cal-month-title').textContent = `${meses[calMonth]} ${calYear}`;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+
+  // Mapear movimientos por dia
+  const dayMap = {};
+  calData.ingresos.forEach(i => {
+    const d = new Date(i.fecha);
+    if (d.getMonth() === calMonth && d.getFullYear() === calYear) {
+      const key = d.getDate();
+      if (!dayMap[key]) dayMap[key] = { ingresos: [], gastos: [], transferencias: [] };
+      dayMap[key].ingresos.push(i);
+    }
+  });
+  calData.gastos.forEach(g => {
+    const d = new Date(g.fecha);
+    if (d.getMonth() === calMonth && d.getFullYear() === calYear) {
+      const key = d.getDate();
+      if (!dayMap[key]) dayMap[key] = { ingresos: [], gastos: [], transferencias: [] };
+      dayMap[key].gastos.push(g);
+    }
+  });
+  calData.transferencias.forEach(t => {
+    const d = new Date(t.fecha);
+    if (d.getMonth() === calMonth && d.getFullYear() === calYear) {
+      const key = d.getDate();
+      if (!dayMap[key]) dayMap[key] = { ingresos: [], gastos: [], transferencias: [] };
+      dayMap[key].transferencias.push(t);
+    }
+  });
+
+  // Render
+  const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  let html = dias.map(d => `<div class="cal-header">${d}</div>`).join('');
+
+  // Espacios vacios antes del primer dia
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="cal-day empty"></div>';
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+    const data = dayMap[day];
+    const hasActivity = data ? 'has-activity' : '';
+    let dots = '';
+    if (data) {
+      if (data.ingresos.length) dots += '<span class="cal-dot cal-dot-ingreso"></span>';
+      if (data.gastos.length) dots += '<span class="cal-dot cal-dot-gasto"></span>';
+      if (data.transferencias.length) dots += '<span class="cal-dot cal-dot-transferencia"></span>';
+    }
+
+    html += `<div class="cal-day ${isToday ? 'today' : ''} ${hasActivity}" onclick="showCalDay(${day})">
+      ${day}
+      ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
+    </div>`;
+  }
+
+  $('#cal-grid').innerHTML = html;
+
+  // Totales del mes
+  const totalIng = calData.ingresos.filter(i => { const d = new Date(i.fecha); return d.getMonth() === calMonth && d.getFullYear() === calYear; }).reduce((s, i) => s + Number(i.monto), 0);
+  const totalGas = calData.gastos.filter(g => { const d = new Date(g.fecha); return d.getMonth() === calMonth && d.getFullYear() === calYear; }).reduce((s, g) => s + Number(g.monto), 0);
+  const totalTrans = calData.transferencias.filter(t => { const d = new Date(t.fecha); return d.getMonth() === calMonth && d.getFullYear() === calYear; }).reduce((s, t) => s + Number(t.monto), 0);
+
+  $('#cal-total-ingresos').textContent = formatMoney(totalIng);
+  $('#cal-total-gastos').textContent = formatMoney(totalGas);
+  $('#cal-total-transferencias').textContent = formatMoney(totalTrans);
+}
+
+window.showCalDay = (day) => {
+  const data = {};
+  calData.ingresos.forEach(i => { const d = new Date(i.fecha); if (d.getDate() === day && d.getMonth() === calMonth && d.getFullYear() === calYear) { if (!data.ingresos) data.ingresos = []; data.ingresos.push(i); }});
+  calData.gastos.forEach(g => { const d = new Date(g.fecha); if (d.getDate() === day && d.getMonth() === calMonth && d.getFullYear() === calYear) { if (!data.gastos) data.gastos = []; data.gastos.push(g); }});
+  calData.transferencias.forEach(t => { const d = new Date(t.fecha); if (d.getDate() === day && d.getMonth() === calMonth && d.getFullYear() === calYear) { if (!data.transferencias) data.transferencias = []; data.transferencias.push(t); }});
+
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  $('#cal-day-title').textContent = `${day} de ${meses[calMonth]} ${calYear}`;
+
+  let html = '';
+  const totalDia = ((data.ingresos || []).reduce((s, i) => s + Number(i.monto), 0)) - ((data.gastos || []).reduce((s, g) => s + Number(g.monto), 0));
+
+  if (!data.ingresos && !data.gastos && !data.transferencias) {
+    html = '<p class="text-muted text-center fst-italic py-3">Sin movimientos este día</p>';
+  } else {
+    if (data.ingresos && data.ingresos.length) {
+      html += '<h6 class="fw-semibold text-success small mb-2"><i class="bi bi-arrow-down-circle me-1"></i>Ingresos</h6>';
+      html += data.ingresos.map(i => `<div class="d-flex justify-content-between py-1 border-bottom"><span class="small">${i.descripcion}</span><span class="fw-bold text-success small">${formatMoney(i.monto)}</span></div>`).join('');
+      html += '<div class="mb-3"></div>';
+    }
+    if (data.gastos && data.gastos.length) {
+      html += '<h6 class="fw-semibold text-danger small mb-2"><i class="bi bi-arrow-up-circle me-1"></i>Gastos</h6>';
+      html += data.gastos.map(g => `<div class="d-flex justify-content-between py-1 border-bottom"><span class="small">${g.descripcion}</span><span class="fw-bold text-danger small">${formatMoney(g.monto)}</span></div>`).join('');
+      html += '<div class="mb-3"></div>';
+    }
+    if (data.transferencias && data.transferencias.length) {
+      html += '<h6 class="fw-semibold text-info small mb-2"><i class="bi bi-arrow-left-right me-1"></i>Transferencias</h6>';
+      html += data.transferencias.map(t => `<div class="d-flex justify-content-between py-1 border-bottom"><span class="small">${t.descripcion || 'Transferencia'}</span><span class="fw-bold text-info small">${formatMoney(t.monto)}</span></div>`).join('');
+      html += '<div class="mb-3"></div>';
+    }
+    html += `<hr><div class="d-flex justify-content-between fw-bold"><span>Balance del día</span><span class="${totalDia >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(totalDia)}</span></div>`;
+  }
+
+  $('#cal-day-body').innerHTML = html;
+  bootstrap.Modal.getOrCreateInstance($('#calDayModal')).show();
 };
 
 // ===== ANALISIS FINANCIERO =====
@@ -1357,8 +1688,150 @@ window.eliminarUsuarioAdmin = async (id) => {
   });
 };
 
+// ===== ONBOARDING =====
+const onboardingSteps = [
+  {
+    icon: 'bi-gem',
+    title: '¡Bienvenido a Finanya!',
+    text: 'Tu aplicación de gestión financiera personal. Aquí podrás controlar ingresos, gastos, ahorros y presupuestos de forma sencilla e intuitiva.'
+  },
+  {
+    icon: 'bi-grid-1x2-fill',
+    title: 'Tu Dashboard',
+    text: 'El panel principal te muestra un resumen completo: balance del mes, gráficas de gastos por categoría, ingresos por mes y tus últimos movimientos.'
+  },
+  {
+    icon: 'bi-arrow-down-circle',
+    title: 'Ingresos y Gastos',
+    text: 'Registra cada entrada y salida de dinero. Asigna categorías, fechas y montos. Todo queda organizado y listo para analizar.'
+  },
+  {
+    icon: 'bi-bank',
+    title: 'Cuentas Financieras',
+    text: 'Crea cuentas como Efectivo, Banco o Tarjeta. El saldo se actualiza automáticamente con cada ingreso, gasto o transferencia.'
+  },
+  {
+    icon: 'bi-speedometer2',
+    title: 'Presupuestos',
+    text: 'Define límites mensuales por categoría de gasto. Recibirás alertas visuales al acercarte o exceder tu presupuesto.'
+  },
+  {
+    icon: 'bi-bullseye',
+    title: 'Metas de Ahorro',
+    text: 'Establece objetivos financieros con fecha límite. Registra aportes y visualiza tu progreso con barras y porcentajes.'
+  },
+  {
+    icon: 'bi-arrow-left-right',
+    title: 'Transferencias',
+    text: 'Mueve dinero entre tus cuentas sin que se registre como ingreso o gasto. Los saldos se actualizan automáticamente.'
+  }
+];
+
+let onboardingStep = 0;
+let onboardingModalInstance = null;
+
+function showOnboarding() {
+  onboardingStep = 0;
+  if (!onboardingModalInstance) {
+    onboardingModalInstance = new bootstrap.Modal($('#onboardingModal'));
+  }
+  renderOnboardingStep();
+  onboardingModalInstance.show();
+}
+
+function renderOnboardingStep() {
+  const step = onboardingSteps[onboardingStep];
+  const total = onboardingSteps.length;
+  const progress = ((onboardingStep + 1) / total) * 100;
+
+  $('#onboarding-bar').style.width = `${progress}%`;
+
+  const dots = onboardingSteps.map((_, i) =>
+    `<div class="onboarding-dot ${i === onboardingStep ? 'active' : ''}"></div>`
+  ).join('');
+
+  $('#onboarding-body').innerHTML = `
+    <div class="onboarding-icon"><i class="bi ${step.icon}"></i></div>
+    <h5 class="onboarding-title">${step.title}</h5>
+    <p class="onboarding-text">${step.text}</p>
+    <div class="onboarding-step-dots">${dots}</div>
+  `;
+
+  // Botones
+  if (onboardingStep === 0) {
+    $('#onboarding-prev').classList.add('d-none');
+  } else {
+    $('#onboarding-prev').classList.remove('d-none');
+  }
+
+  if (onboardingStep === total - 1) {
+    $('#onboarding-next').innerHTML = '<i class="bi bi-check-lg me-1"></i> Finalizar';
+    $('#onboarding-skip').classList.add('d-none');
+  } else {
+    $('#onboarding-next').innerHTML = 'Siguiente <i class="bi bi-arrow-right"></i>';
+    $('#onboarding-skip').classList.remove('d-none');
+  }
+}
+
+$('#onboarding-next').addEventListener('click', () => {
+  if (onboardingStep < onboardingSteps.length - 1) {
+    onboardingStep++;
+    renderOnboardingStep();
+  } else {
+    completeOnboarding();
+  }
+});
+
+$('#onboarding-prev').addEventListener('click', () => {
+  if (onboardingStep > 0) {
+    onboardingStep--;
+    renderOnboardingStep();
+  }
+});
+
+$('#onboarding-skip').addEventListener('click', () => {
+  completeOnboarding();
+});
+
+function completeOnboarding() {
+  localStorage.setItem('finanya-onboarding-done', 'true');
+  if (onboardingModalInstance) onboardingModalInstance.hide();
+  showToast('¡Listo! Explora Finanya a tu ritmo', 'success');
+}
+
+function checkOnboarding() {
+  const done = localStorage.getItem('finanya-onboarding-done');
+  if (!done) {
+    setTimeout(() => showOnboarding(), 500);
+  }
+}
+
+// Funcion para volver a ver el onboarding (desde perfil)
+window.resetOnboarding = () => {
+  localStorage.removeItem('finanya-onboarding-done');
+  showOnboarding();
+};
+
 // ===== INIT =====
 initTheme();
+// Inicializar tooltips de Bootstrap
+function initTooltips() {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    new bootstrap.Tooltip(el);
+  });
+}
+initTooltips();
+
+// Re-inicializar tooltips cuando cambia el contenido
+const originalShowApp = null;
+const tooltipObserver = new MutationObserver(() => {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]:not([data-tooltip-init])').forEach(el => {
+    new bootstrap.Tooltip(el);
+    el.setAttribute('data-tooltip-init', 'true');
+  });
+});
+tooltipObserver.observe(document.body, { childList: true, subtree: true });
+
 const saved = localStorage.getItem('finanya-user');
 const savedToken = localStorage.getItem('finanya-token');
 if (saved && savedToken) {

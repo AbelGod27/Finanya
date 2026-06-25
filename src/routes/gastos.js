@@ -35,7 +35,7 @@ router.get('/usuario/:id_usuario', async (req, res) => {
 // Crear gasto
 router.post('/', async (req, res) => {
   try {
-    const { id_usuario, monto, descripcion, fecha, metodo_pago, id_categoria } = req.body;
+    const { id_usuario, monto, descripcion, fecha, metodo_pago, id_categoria, id_cuenta } = req.body;
 
     // Validaciones
     if (!id_usuario) {
@@ -67,11 +67,16 @@ router.post('/', async (req, res) => {
     }
 
     const resultado = await pool.query(
-      'INSERT INTO gastos (id_usuario, id_categoria, monto, descripcion, fecha, metodo_pago) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_gasto',
-      [id_usuario, id_categoria, monto, descripcion, fecha, metodo_pago]
+      'INSERT INTO gastos (id_usuario, id_categoria, id_cuenta, monto, descripcion, fecha, metodo_pago) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_gasto',
+      [id_usuario, id_categoria, id_cuenta || null, monto, descripcion, fecha, metodo_pago]
     );
 
-    res.status(201).json({ id_gasto: resultado.rows[0].id_gasto, monto, descripcion, fecha, metodo_pago, id_categoria });
+    // Actualizar saldo de la cuenta si se especifico
+    if (id_cuenta) {
+      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
+    }
+
+    res.status(201).json({ id_gasto: resultado.rows[0].id_gasto, monto, descripcion, fecha, metodo_pago, id_categoria, id_cuenta });
   } catch (error) {
     console.error('Error al crear gasto:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

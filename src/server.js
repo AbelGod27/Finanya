@@ -31,6 +31,8 @@ const ingresosRoutes = require('./routes/ingresos');
 const gastosRoutes = require('./routes/gastos');
 const metasRoutes = require('./routes/metas');
 const presupuestosRoutes = require('./routes/presupuestos');
+const cuentasRoutes = require('./routes/cuentas');
+const transferenciasRoutes = require('./routes/transferencias');
 const adminRoutes = require('./routes/admin');
 const autorizacionAdmin = require('./middlewares/autorizacionMiddleware');
 
@@ -39,6 +41,8 @@ app.use('/api/ingresos', autenticacionMiddleware, ingresosRoutes);
 app.use('/api/gastos', autenticacionMiddleware, gastosRoutes);
 app.use('/api/metas', autenticacionMiddleware, metasRoutes);
 app.use('/api/presupuestos', autenticacionMiddleware, presupuestosRoutes);
+app.use('/api/cuentas', autenticacionMiddleware, cuentasRoutes);
+app.use('/api/transferencias', autenticacionMiddleware, transferenciasRoutes);
 app.use('/api/admin', autenticacionMiddleware, autorizacionAdmin, adminRoutes);
 
 // Middleware global de errores (debe ir al final)
