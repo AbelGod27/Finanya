@@ -824,8 +824,9 @@ async function loadMetas() {
               <span>${formatMoney(m.monto_actual)} / ${formatMoney(m.monto_objetivo)}</span>
               <span class="fw-bold">${pct}%</span>
             </div>
-            <div class="mt-3 d-flex gap-2">
+            <div class="mt-3 d-flex gap-2 flex-wrap">
               <button class="btn btn-sm btn-outline-primary" onclick="aportarMeta(${m.id_meta})"><i class="bi bi-plus"></i> Aporte</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="editarMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}', ${m.monto_objetivo}, ${m.monto_actual})"><i class="bi bi-pencil"></i> Editar</button>
               <button class="btn btn-sm btn-outline-danger" onclick="deleteMeta(${m.id_meta})"><i class="bi bi-trash"></i></button>
             </div>
           </div>
@@ -847,6 +848,22 @@ window.aportarMeta = (id) => {
       loadDashboard();
       showToast('Aporte registrado', 'success');
     } catch (err) { showToast(err.error || 'Error al registrar aporte', 'danger'); }
+  });
+};
+
+window.editarMeta = (id, nombre, montoObjetivo, montoActual) => {
+  openModal('Editar Meta de Ahorro', [
+    { name: 'nombre', label: 'Nombre', required: true, value: nombre },
+    { name: 'monto_objetivo', label: 'Monto objetivo', type: 'number', required: true, step: '0.01', min: '0.01', value: montoObjetivo },
+    { name: 'monto_actual', label: 'Monto ahorrado actualmente', type: 'number', required: true, step: '0.01', min: '0', value: montoActual }
+  ], async (data) => {
+    try {
+      await request(`/metas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      closeModal();
+      loadMetas();
+      loadDashboard();
+      showToast('Meta actualizada', 'success');
+    } catch (err) { showToast(err.error || 'Error al editar meta', 'danger'); }
   });
 };
 
