@@ -143,6 +143,13 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Ingreso no encontrado' });
     }
 
+    const ingreso = resultado.rows[0];
+
+    // Revertir saldo de la cuenta si tenía una asociada
+    if (ingreso.id_cuenta) {
+      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [ingreso.monto, ingreso.id_cuenta]);
+    }
+
     await pool.query('DELETE FROM ingresos WHERE id_ingreso = $1', [id_ingreso]);
     res.json({ mensaje: 'Ingreso eliminado' });
   } catch (error) {

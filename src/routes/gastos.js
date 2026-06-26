@@ -147,6 +147,13 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Gasto no encontrado' });
     }
 
+    const gasto = resultado.rows[0];
+
+    // Revertir saldo de la cuenta si tenía una asociada
+    if (gasto.id_cuenta) {
+      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual + $1 WHERE id_cuenta = $2', [gasto.monto, gasto.id_cuenta]);
+    }
+
     await pool.query('DELETE FROM gastos WHERE id_gasto = $1', [id_gasto]);
     res.json({ mensaje: 'Gasto eliminado' });
   } catch (error) {
