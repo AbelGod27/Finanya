@@ -63,15 +63,17 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'La categoría no es válida para ingresos' });
     }
 
+    if (!id_cuenta) {
+      return res.status(400).json({ error: 'Debes seleccionar una cuenta para registrar el ingreso' });
+    }
+
     const resultado = await pool.query(
       'INSERT INTO ingresos (id_usuario, id_categoria, id_cuenta, monto, descripcion, fecha) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_ingreso',
-      [id_usuario, id_categoria, id_cuenta || null, monto, descripcion, fecha]
+      [id_usuario, id_categoria, id_cuenta, monto, descripcion, fecha]
     );
 
-    // Actualizar saldo de la cuenta si se especifico
-    if (id_cuenta) {
-      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual + $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
-    }
+    // Actualizar saldo de la cuenta
+    await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual + $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
 
     res.status(201).json({ id_ingreso: resultado.rows[0].id_ingreso, monto, descripcion, fecha, id_categoria, id_cuenta });
   } catch (error) {

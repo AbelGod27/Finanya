@@ -86,6 +86,19 @@ router.post('/registro', validarUsuario, async (req, res) => {
       );
     }
 
+    // Crear cuentas por defecto
+    const cuentasDefault = [
+      { nombre: 'Efectivo', tipo: 'efectivo', descripcion: 'Dinero en efectivo' },
+      { nombre: 'Banco', tipo: 'banco', descripcion: 'Cuenta bancaria principal' }
+    ];
+
+    for (const cuenta of cuentasDefault) {
+      await pool.query(
+        'INSERT INTO cuentas (id_usuario, nombre, tipo, saldo_inicial, saldo_actual, descripcion) VALUES ($1, $2, $3, 0, 0, $4)',
+        [id_usuario, cuenta.nombre, cuenta.tipo, cuenta.descripcion]
+      );
+    }
+
     res.status(201).json({
       mensaje: 'Usuario registrado exitosamente',
       id_usuario

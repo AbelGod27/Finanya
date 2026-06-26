@@ -697,20 +697,18 @@ window.deleteCategoria = async (id) => {
 $('#btn-nuevo-ingreso').addEventListener('click', async () => {
   const catIngresos = categorias.filter(c => c.tipo === 'ingreso');
   if (catIngresos.length === 0) { showToast('Primero crea una categoría de tipo ingreso', 'warning'); return; }
-  // Cargar cuentas para el selector
   let userCuentas = [];
   try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
-  const cuentaOpts = [{ value: '', label: 'Sin cuenta' }, ...userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }))];
+  if (userCuentas.length === 0) { showToast('Primero crea una cuenta financiera para registrar ingresos', 'warning'); return; }
 
   openModal('Nuevo Ingreso', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
     { name: 'descripcion', label: 'Descripción', required: true, placeholder: 'Ej: Salario mensual' },
     { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: new Date().toISOString().split('T')[0] },
     { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catIngresos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
-    { name: 'id_cuenta', label: 'Cuenta (opcional)', type: 'select', options: cuentaOpts }
+    { name: 'id_cuenta', label: 'Cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) }
   ], async (data) => {
     try {
-      if (!data.id_cuenta) delete data.id_cuenta;
       await request('/ingresos', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadIngresos();
@@ -762,7 +760,7 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
   if (catGastos.length === 0) { showToast('Primero crea una categoría de tipo gasto', 'warning'); return; }
   let userCuentas = [];
   try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
-  const cuentaOpts = [{ value: '', label: 'Sin cuenta' }, ...userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }))];
+  if (userCuentas.length === 0) { showToast('Primero crea una cuenta financiera para registrar gastos', 'warning'); return; }
 
   openModal('Nuevo Gasto', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
@@ -776,10 +774,9 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
       { value: 'Pago móvil', label: 'Pago móvil' }
     ]},
     { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catGastos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
-    { name: 'id_cuenta', label: 'Cuenta (opcional)', type: 'select', options: cuentaOpts }
+    { name: 'id_cuenta', label: 'Cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) }
   ], async (data) => {
     try {
-      if (!data.id_cuenta) delete data.id_cuenta;
       await request('/gastos', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadGastos();

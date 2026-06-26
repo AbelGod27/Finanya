@@ -66,17 +66,22 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'La categoría no es válida para gastos' });
     }
 
-    // Verificar saldo suficiente en la cuenta si se especifico
-    if (id_cuenta) {
-      const cuentaResult = await pool.query('SELECT saldo_actual FROM cuentas WHERE id_cuenta = $1', [id_cuenta]);
-      if (cuentaResult.rows.length > 0 && Number(cuentaResult.rows[0].saldo_actual) < Number(monto)) {
-        return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
-      }
+    if (!id_cuenta) {
+      return res.status(400).json({ error: 'Debes seleccionar una cuenta para registrar el gasto' });
+    }
+
+    // Verificar saldo suficiente en la cuenta
+    const cuentaResult = await pool.query('SELECT saldo_actual FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2', [id_cuenta, id_usuario]);
+    if (cuentaResult.rows.length === 0) {
+      return res.status(400).json({ error: 'La cuenta seleccionada no es valida' });
+    }
+    if (Number(cuentaResult.rows[0].saldo_actual) < Number(monto)) {
+      return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
     }
 
     const resultado = await pool.query(
       'INSERT INTO gastos (id_usuario, id_categoria, id_cuenta, monto, descripcion, fecha, metodo_pago) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_gasto',
-      [id_usuario, id_categoria, id_cuenta || null, monto, descripcion, fecha, metodo_pago]
+      [id_usuario, id_categoria, id_cuenta, monto, descripcion, fecha, metodo_pago]
     );
 
     // Actualizar saldo de la cuenta si se especifico
