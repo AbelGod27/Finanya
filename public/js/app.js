@@ -12,7 +12,19 @@ async function request(path, options = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API}${path}`, { headers, ...options });
   const data = await res.json();
-  if (!res.ok) throw { status: res.status, ...data };
+  if (!res.ok) {
+    // Si el token expiró, cerrar sesión automáticamente
+    if (res.status === 401 && currentUser) {
+      localStorage.removeItem('finanya-user');
+      localStorage.removeItem('finanya-token');
+      currentUser = null;
+      $('#app-container').classList.add('d-none');
+      $('#landing-container').classList.remove('d-none');
+      showToast('Tu sesión expiró. Inicia sesión nuevamente.', 'warning');
+      return;
+    }
+    throw { status: res.status, ...data };
+  }
   return data;
 }
 

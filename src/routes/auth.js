@@ -6,7 +6,7 @@ const pool = require('../config/db');
 const { validarUsuario } = require('../middlewares/validacionMiddleware');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'finanya_secret_key_2024';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
 
 // Multer en memoria (para guardar como Base64 en BD)
 const upload = multer({
