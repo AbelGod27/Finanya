@@ -92,4 +92,89 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Retirar de meta de ahorro a cuenta
+router.post('/meta-a-cuenta', async (req, res) => {
+  try {
+    const { id_usuario, id_meta, id_cuenta, monto, descripcion } = req.body;
+
+    if (!id_usuario || !id_meta || !id_cuenta) return res.status(400).json({ error: 'Campos requeridos: id_usuario, id_meta, id_cuenta' });
+    if (!monto || isNaN(monto) || Number(monto) <= 0) return res.status(400).json({ error: 'El monto debe ser mayor a 0' });
+
+    // Verificar meta pertenece al usuario y tiene saldo
+    const meta = await pool.query('SELECT * FROM metas_ahorro WHERE id_meta = $1 AND id_usuario = $2', [id_meta, id_usuario]);
+    if (meta.rows.length === 0) return res.status(404).json({ error: 'Meta no encontrada' });
+    if (Number(meta.rows[0].monto_actual) < Number(monto)) return res.status(400).json({ error: 'Saldo insuficiente en la meta' });
+
+    // Verificar cuenta pertenece al usuario
+    const cuenta = await pool.query('SELECT * FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2', [id_cuenta, id_usuario]);
+    if (cuenta.rows.length === 0) return res.status(400).json({ error: 'Cuenta no encontrada' });
+
+    // Ejecutar transferencia
+    await pool.query('UPDATE metas_ahorro SET monto_actual = monto_actual - $1 WHERE id_meta = $2', [monto, id_meta]);
+    await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual + $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
+
+    res.json({ mensaje: `Retirado ${monto} de la meta a la cuenta` });
+  } catch (error) {
+    console.error('Error en transferencia meta-a-cuenta:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Transferir entre metas de ahorro
+router.post('/meta-a-meta', async (req, res) => {
+  try {
+    const { id_usuario, id_meta_origen, id_meta_destino, monto, descripcion } = req.body;
+
+    if (!id_usuario || !id_meta_origen || !id_meta_destino) return res.status(400).json({ error: 'Campos requeridos: id_usuario, id_meta_origen, id_meta_destino' });
+    if (!monto || isNaN(monto) || Number(monto) <= 0) return res.status(400).json({ error: 'El monto debe ser mayor a 0' });
+    if (Number(id_meta_origen) === Number(id_meta_destino)) return res.status(400).json({ error: 'No puedes transferir a la misma meta' });
+
+    // Verificar meta origen
+    const origen = await pool.query('SELECT * FROM metas_ahorro WHERE id_meta = $1 AND id_usuario = $2', [id_meta_origen, id_usuario]);
+    if (origen.rows.length === 0) return res.status(404).json({ error: 'Meta de origen no encontrada' });
+    if (Number(origen.rows[0].monto_actual) < Number(monto)) return res.status(400).json({ error: 'Saldo insuficiente en la meta de origen' });
+
+    // Verificar meta destino
+    const destino = await pool.query('SELECT * FROM metas_ahorro WHERE id_meta = $1 AND id_usuario = $2', [id_meta_destino, id_usuario]);
+    if (destino.rows.length === 0) return res.status(404).json({ error: 'Meta de destino no encontrada' });
+
+    // Ejecutar transferencia
+    await pool.query('UPDATE metas_ahorro SET monto_actual = monto_actual - $1 WHERE id_meta = $2', [monto, id_meta_origen]);
+    await pool.query('UPDATE metas_ahorro SET monto_actual = monto_actual + $1 WHERE id_meta = $2', [monto, id_meta_destino]);
+
+    res.json({ mensaje: `Transferido ${monto} entre metas` });
+  } catch (error) {
+    console.error('Error en transferencia meta-a-meta:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Transferir de cuenta a meta de ahorro
+router.post('/cuenta-a-meta', async (req, res) => {
+  try {
+    const { id_usuario, id_cuenta, id_meta, monto, descripcion } = req.body;
+
+    if (!id_usuario || !id_cuenta || !id_meta) return res.status(400).json({ error: 'Campos requeridos: id_usuario, id_cuenta, id_meta' });
+    if (!monto || isNaN(monto) || Number(monto) <= 0) return res.status(400).json({ error: 'El monto debe ser mayor a 0' });
+
+    // Verificar cuenta
+    const cuenta = await pool.query('SELECT * FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2', [id_cuenta, id_usuario]);
+    if (cuenta.rows.length === 0) return res.status(400).json({ error: 'Cuenta no encontrada' });
+    if (Number(cuenta.rows[0].saldo_actual) < Number(monto)) return res.status(400).json({ error: 'Saldo insuficiente en la cuenta' });
+
+    // Verificar meta
+    const meta = await pool.query('SELECT * FROM metas_ahorro WHERE id_meta = $1 AND id_usuario = $2', [id_meta, id_usuario]);
+    if (meta.rows.length === 0) return res.status(404).json({ error: 'Meta no encontrada' });
+
+    // Ejecutar transferencia
+    await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
+    await pool.query('UPDATE metas_ahorro SET monto_actual = monto_actual + $1 WHERE id_meta = $2', [monto, id_meta]);
+
+    res.json({ mensaje: `Transferido ${monto} de cuenta a meta` });
+  } catch (error) {
+    console.error('Error en transferencia cuenta-a-meta:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

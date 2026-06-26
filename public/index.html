@@ -407,7 +407,12 @@
       <section id="section-transferencias" class="section d-none">
         <div class="section-top">
           <h4 class="fw-bold"><i class="bi bi-arrow-left-right text-info me-2"></i>Transferencias<span class="help-icon" data-bs-toggle="tooltip" title="Mueve dinero entre tus cuentas sin que se registre como ingreso o gasto.">?</span></h4>
-          <button class="btn btn-info rounded-pill text-white" id="btn-nueva-transferencia"><i class="bi bi-plus-lg"></i> Nueva</button>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-info rounded-pill text-white btn-sm" id="btn-nueva-transferencia"><i class="bi bi-arrow-left-right"></i> Entre cuentas</button>
+            <button class="btn btn-outline-warning rounded-pill btn-sm" id="btn-cuenta-a-meta"><i class="bi bi-arrow-right"></i> Cuenta a Meta</button>
+            <button class="btn btn-outline-success rounded-pill btn-sm" id="btn-meta-a-cuenta"><i class="bi bi-arrow-left"></i> Meta a Cuenta</button>
+            <button class="btn btn-outline-primary rounded-pill btn-sm" id="btn-meta-a-meta"><i class="bi bi-arrow-left-right"></i> Meta a Meta</button>
+          </div>
         </div>
         <div class="content-card">
           <div class="content-card-body" id="lista-transferencias">

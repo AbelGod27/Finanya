@@ -1029,6 +1029,76 @@ window.eliminarTransferencia = async (id) => {
   });
 };
 
+// Cuenta a Meta
+$('#btn-cuenta-a-meta').addEventListener('click', async () => {
+  let userCuentas = [], userMetas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  try { userMetas = await request(`/metas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  if (userCuentas.length === 0) { showToast('Necesitas al menos una cuenta', 'warning'); return; }
+  if (userMetas.length === 0) { showToast('Necesitas al menos una meta de ahorro', 'warning'); return; }
+
+  openModal('Transferir de Cuenta a Meta', [
+    { name: 'id_cuenta', label: 'Desde cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) },
+    { name: 'id_meta', label: 'Hacia meta', type: 'select', required: true, options: userMetas.map(m => ({ value: m.id_meta, label: `${m.nombre} (${formatMoney(m.monto_actual)}/${formatMoney(m.monto_objetivo)})` })) },
+    { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' }
+  ], async (data) => {
+    try {
+      await request('/transferencias/cuenta-a-meta', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
+      closeModal();
+      loadCuentas();
+      loadMetas();
+      loadDashboard();
+      showToast('Transferencia realizada', 'success');
+    } catch (err) { showToast(err.error || 'Error', 'danger'); }
+  });
+});
+
+// Meta a Cuenta
+$('#btn-meta-a-cuenta').addEventListener('click', async () => {
+  let userCuentas = [], userMetas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  try { userMetas = await request(`/metas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  if (userCuentas.length === 0) { showToast('Necesitas al menos una cuenta', 'warning'); return; }
+  if (userMetas.length === 0) { showToast('Necesitas al menos una meta de ahorro', 'warning'); return; }
+
+  openModal('Retirar de Meta a Cuenta', [
+    { name: 'id_meta', label: 'Desde meta', type: 'select', required: true, options: userMetas.map(m => ({ value: m.id_meta, label: `${m.nombre} (${formatMoney(m.monto_actual)})` })) },
+    { name: 'id_cuenta', label: 'Hacia cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) },
+    { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' }
+  ], async (data) => {
+    try {
+      await request('/transferencias/meta-a-cuenta', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
+      closeModal();
+      loadCuentas();
+      loadMetas();
+      loadDashboard();
+      showToast('Retiro realizado', 'success');
+    } catch (err) { showToast(err.error || 'Error', 'danger'); }
+  });
+});
+
+// Meta a Meta
+$('#btn-meta-a-meta').addEventListener('click', async () => {
+  let userMetas = [];
+  try { userMetas = await request(`/metas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  if (userMetas.length < 2) { showToast('Necesitas al menos 2 metas de ahorro', 'warning'); return; }
+
+  const opts = userMetas.map(m => ({ value: m.id_meta, label: `${m.nombre} (${formatMoney(m.monto_actual)})` }));
+  openModal('Transferir entre Metas', [
+    { name: 'id_meta_origen', label: 'Desde meta', type: 'select', required: true, options: opts },
+    { name: 'id_meta_destino', label: 'Hacia meta', type: 'select', required: true, options: opts },
+    { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' }
+  ], async (data) => {
+    try {
+      await request('/transferencias/meta-a-meta', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
+      closeModal();
+      loadMetas();
+      loadDashboard();
+      showToast('Transferencia entre metas realizada', 'success');
+    } catch (err) { showToast(err.error || 'Error', 'danger'); }
+  });
+});
+
 // ===== METAS =====
 $('#btn-nueva-meta').addEventListener('click', () => {
   openModal('Nueva Meta de Ahorro', [
