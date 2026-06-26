@@ -122,10 +122,11 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Eliminar meta (cascada eliminará aportes)
+// Eliminar meta (devuelve el ahorro a una cuenta si se indica)
 router.delete('/:id', async (req, res) => {
   try {
     const id_meta = req.params.id;
+    const { id_cuenta } = req.query;
 
     const resultado = await pool.query(
       'SELECT * FROM metas_ahorro WHERE id_meta = $1',
@@ -135,8 +136,15 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Meta no encontrada' });
     }
 
+    const meta = resultado.rows[0];
+
+    // Si hay monto ahorrado y se indica cuenta, devolver el dinero
+    if (Number(meta.monto_actual) > 0 && id_cuenta) {
+      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual + $1 WHERE id_cuenta = $2', [meta.monto_actual, id_cuenta]);
+    }
+
     await pool.query('DELETE FROM metas_ahorro WHERE id_meta = $1', [id_meta]);
-    res.json({ mensaje: 'Meta y aportes asociados eliminados' });
+    res.json({ mensaje: 'Meta eliminada', monto_devuelto: id_cuenta ? Number(meta.monto_actual) : 0 });
   } catch (error) {
     console.error('Error al eliminar meta:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

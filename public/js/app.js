@@ -1190,14 +1190,33 @@ window.editarMeta = (id, nombre, montoObjetivo, montoActual) => {
 };
 
 window.deleteMeta = async (id) => {
-  showConfirm('¿Eliminar esta meta y todos sus aportes?', async () => {
-    try {
-      await request(`/metas/${id}`, { method: 'DELETE' });
-      loadMetas();
-      loadDashboard();
-      showToast('Meta eliminada', 'success');
-    } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
-  });
+  // Cargar cuentas para ofrecer devolución
+  let userCuentas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+
+  if (userCuentas.length > 0) {
+    openModal('Eliminar Meta de Ahorro', [
+      { name: 'id_cuenta', label: '¿A qué cuenta devolver el ahorro?', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) }
+    ], async (data) => {
+      try {
+        await request(`/metas/${id}?id_cuenta=${data.id_cuenta}`, { method: 'DELETE' });
+        closeModal();
+        loadMetas();
+        loadCuentas();
+        loadDashboard();
+        showToast('Meta eliminada y ahorro devuelto a la cuenta', 'success');
+      } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+    });
+  } else {
+    showConfirm('¿Eliminar esta meta? El dinero ahorrado se perderá porque no tienes cuentas.', async () => {
+      try {
+        await request(`/metas/${id}`, { method: 'DELETE' });
+        loadMetas();
+        loadDashboard();
+        showToast('Meta eliminada', 'success');
+      } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+    });
+  }
 };
 
 // ===== CALENDARIO FINANCIERO =====
