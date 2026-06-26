@@ -147,7 +147,7 @@ router.delete('/:id', async (req, res) => {
 
     const ingreso = resultado.rows[0];
 
-    // Revertir saldo de la cuenta si tenía una asociada
+    // Revertir saldo de la cuenta
     if (ingreso.id_cuenta) {
       await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [ingreso.monto, ingreso.id_cuenta]);
     }

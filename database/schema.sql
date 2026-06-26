@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash VARCHAR(255) NOT NULL,
   rol VARCHAR(20) DEFAULT 'usuario',
   activo BOOLEAN DEFAULT true,
-  avatar_url VARCHAR(500) DEFAULT NULL,
+  avatar_url TEXT DEFAULT NULL,
   ultimo_acceso TIMESTAMP DEFAULT NULL,
   fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

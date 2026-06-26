@@ -130,6 +130,11 @@ router.post('/login', async (req, res) => {
 
     const usuario = resultado.rows[0];
 
+    // Verificar que el usuario esté activo
+    if (!usuario.activo) {
+      return res.status(401).json({ error: 'Cuenta desactivada. Contacta al administrador.' });
+    }
+
     // Verificar contraseña
     const passwordValida = await bcrypt.compare(password, usuario.password_hash);
     if (!passwordValida) {
@@ -159,8 +164,10 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Obtener perfil
-router.get('/perfil/:id', async (req, res) => {
+// Obtener perfil (protegido)
+const autenticacionMiddleware = require('../middlewares/autenticacionMiddleware');
+
+router.get('/perfil/:id', autenticacionMiddleware, async (req, res) => {
   try {
     const resultado = await pool.query(
       'SELECT id_usuario, nombre, correo, fecha_registro, avatar_url FROM usuarios WHERE id_usuario = $1',
@@ -176,8 +183,8 @@ router.get('/perfil/:id', async (req, res) => {
   }
 });
 
-// Editar perfil
-router.put('/perfil/:id', async (req, res) => {
+// Editar perfil (protegido)
+router.put('/perfil/:id', autenticacionMiddleware, async (req, res) => {
   try {
     const { nombre, password_actual, password_nueva } = req.body;
     const id_usuario = req.params.id;
@@ -223,8 +230,8 @@ router.put('/perfil/:id', async (req, res) => {
   }
 });
 
-// Subir avatar (guarda como Base64 en la BD)
-router.post('/perfil/:id/avatar', upload.single('avatar'), async (req, res) => {
+// Subir avatar (protegido)
+router.post('/perfil/:id/avatar', autenticacionMiddleware, upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No se proporcionó una imagen' });
