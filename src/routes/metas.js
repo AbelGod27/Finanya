@@ -147,7 +147,7 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/aportes', async (req, res) => {
   try {
     const id_meta = req.params.id;
-    const { monto, descripcion } = req.body;
+    const { monto, descripcion, id_cuenta } = req.body;
 
     // Verificar que la meta existe
     const metaResult = await pool.query(
@@ -163,6 +163,18 @@ router.post('/:id/aportes', async (req, res) => {
     }
     if (descripcion && descripcion.length > 200) {
       return res.status(400).json({ error: 'La descripción no debe exceder 200 caracteres' });
+    }
+
+    // Si se especifica cuenta, verificar saldo y descontar
+    if (id_cuenta) {
+      const cuentaResult = await pool.query('SELECT saldo_actual FROM cuentas WHERE id_cuenta = $1', [id_cuenta]);
+      if (cuentaResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Cuenta no encontrada' });
+      }
+      if (Number(cuentaResult.rows[0].saldo_actual) < Number(monto)) {
+        return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
+      }
+      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
     }
 
     const fecha = new Date().toISOString().split('T')[0];

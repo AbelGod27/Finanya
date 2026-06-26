@@ -735,7 +735,8 @@ async function loadIngresos() {
           <td><span class="badge bg-success">${i.categoria_nombre}</span></td>
           <td class="mov-ingreso fw-bold">${formatMoney(i.monto)}</td>
           <td>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteIngreso(${i.id_ingreso})"><i class="bi bi-trash"></i></button>
+            <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editIngreso(${i.id_ingreso}, '${i.descripcion.replace(/'/g, "\\'")}', ${i.monto}, '${i.fecha}')"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteIngreso(${i.id_ingreso})"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
       `).join('')}</tbody>
@@ -751,6 +752,22 @@ window.deleteIngreso = async (id) => {
       loadDashboard();
       showToast('Ingreso eliminado', 'success');
     } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+  });
+};
+
+window.editIngreso = (id, descripcion, monto, fecha) => {
+  openModal('Editar Ingreso', [
+    { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', value: monto },
+    { name: 'descripcion', label: 'Descripción', required: true, value: descripcion },
+    { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: fecha.split('T')[0] }
+  ], async (data) => {
+    try {
+      await request(`/ingresos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      closeModal();
+      loadIngresos();
+      loadDashboard();
+      showToast('Ingreso actualizado', 'success');
+    } catch (err) { showToast(err.error || 'Error al editar', 'danger'); }
   });
 };
 
@@ -804,7 +821,8 @@ async function loadGastos() {
           <td>${g.metodo_pago}</td>
           <td class="mov-gasto fw-bold">${formatMoney(g.monto)}</td>
           <td>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteGasto(${g.id_gasto})"><i class="bi bi-trash"></i></button>
+            <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editGasto(${g.id_gasto}, '${g.descripcion.replace(/'/g, "\\'")}', ${g.monto}, '${g.fecha}', '${g.metodo_pago}')"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteGasto(${g.id_gasto})"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
       `).join('')}</tbody>
@@ -820,6 +838,29 @@ window.deleteGasto = async (id) => {
       loadDashboard();
       showToast('Gasto eliminado', 'success');
     } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+  });
+};
+
+window.editGasto = (id, descripcion, monto, fecha, metodo_pago) => {
+  openModal('Editar Gasto', [
+    { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', value: monto },
+    { name: 'descripcion', label: 'Descripción', required: true, value: descripcion },
+    { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: fecha.split('T')[0] },
+    { name: 'metodo_pago', label: 'Método de pago', type: 'select', required: true, options: [
+      { value: 'Efectivo', label: 'Efectivo', selected: metodo_pago === 'Efectivo' },
+      { value: 'Tarjeta de débito', label: 'Tarjeta de débito', selected: metodo_pago === 'Tarjeta de débito' },
+      { value: 'Tarjeta de crédito', label: 'Tarjeta de crédito', selected: metodo_pago === 'Tarjeta de crédito' },
+      { value: 'Transferencia', label: 'Transferencia', selected: metodo_pago === 'Transferencia' },
+      { value: 'Pago móvil', label: 'Pago móvil', selected: metodo_pago === 'Pago móvil' }
+    ]}
+  ], async (data) => {
+    try {
+      await request(`/gastos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      closeModal();
+      loadGastos();
+      loadDashboard();
+      showToast('Gasto actualizado', 'success');
+    } catch (err) { showToast(err.error || 'Error al editar', 'danger'); }
   });
 };
 
@@ -1041,12 +1082,18 @@ async function loadMetas() {
   } catch (err) { console.error('Error cargando metas:', err); }
 }
 
-window.aportarMeta = (id) => {
+window.aportarMeta = async (id) => {
+  let userCuentas = [];
+  try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
+  const cuentaOpts = [{ value: '', label: 'Sin cuenta (manual)' }, ...userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }))];
+
   openModal('Registrar Aporte', [
     { name: 'monto', label: 'Monto del aporte', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
+    { name: 'id_cuenta', label: 'Descontar de cuenta', type: 'select', options: cuentaOpts },
     { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Aporte quincenal' }
   ], async (data) => {
     try {
+      if (!data.id_cuenta) delete data.id_cuenta;
       await request(`/metas/${id}/aportes`, { method: 'POST', body: JSON.stringify(data) });
       closeModal();
       loadMetas();

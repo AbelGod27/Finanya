@@ -1,9 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
+
+// Rate limiting para login y registro
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10, // 10 intentos por ventana
+  message: { error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' }
+});
 
 // Middlewares globales
 const registroMiddleware = require('./middlewares/registroMiddleware');
@@ -15,6 +23,10 @@ app.use(registroMiddleware);
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Rutas publicas con rate limiting
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/registro', authLimiter);
 
 // Rutas publicas (no requieren autenticacion)
 const authRoutes = require('./routes/auth');

@@ -135,6 +135,13 @@ router.put('/:id', async (req, res) => {
     const nuevoMetodo = metodo_pago || gasto.metodo_pago;
     const nuevaCat = id_categoria || gasto.id_categoria;
 
+    // Recalcular saldo de la cuenta si cambió el monto
+    if (gasto.id_cuenta && monto && Number(monto) !== Number(gasto.monto)) {
+      const diferencia = Number(monto) - Number(gasto.monto);
+      // Si el gasto nuevo es mayor, restar más; si es menor, devolver
+      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [diferencia, gasto.id_cuenta]);
+    }
+
     await pool.query(
       'UPDATE gastos SET monto = $1, descripcion = $2, fecha = $3, metodo_pago = $4, id_categoria = $5 WHERE id_gasto = $6',
       [nuevoMonto, nuevaDesc, nuevaFecha, nuevoMetodo, nuevaCat, id_gasto]
