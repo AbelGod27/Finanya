@@ -143,6 +143,7 @@
             <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
           </button>
           <p class="text-center mt-3 small">¿No tienes cuenta? <a href="#" id="show-registro" class="fw-semibold">Regístrate</a></p>
+          <p class="text-center small"><a href="#" id="show-recuperar" class="text-muted">¿Olvidaste tu contraseña?</a></p>
           <div id="login-error" class="alert alert-danger mt-3 d-none small" role="alert"></div>
         </form>
 
@@ -176,6 +177,51 @@
           </button>
           <p class="text-center mt-3 small">¿Ya tienes cuenta? <a href="#" id="show-login" class="fw-semibold">Inicia sesión</a></p>
           <div id="registro-error" class="alert alert-danger mt-3 d-none small" role="alert"></div>
+        </form>
+
+        <!-- Recuperar Contrasena Form -->
+        <form id="recuperar-form" class="d-none">
+          <h5 class="mb-3 fw-semibold">Recuperar Contraseña</h5>
+          <p class="small text-muted mb-3">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Correo</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control" id="recuperar-correo" required placeholder="tu@correo.com">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 mt-2">
+            <i class="bi bi-send me-2"></i>Enviar enlace
+          </button>
+          <p class="text-center mt-3 small"><a href="#" id="show-login-from-recuperar" class="fw-semibold">Volver al inicio de sesión</a></p>
+          <div id="recuperar-msg" class="alert alert-success mt-3 d-none small" role="alert"></div>
+          <div id="recuperar-error" class="alert alert-danger mt-3 d-none small" role="alert"></div>
+        </form>
+
+        <!-- Restablecer Contrasena Form -->
+        <form id="restablecer-form" class="d-none">
+          <h5 class="mb-3 fw-semibold">Nueva Contraseña</h5>
+          <p class="small text-muted mb-3">Ingresa tu nueva contraseña.</p>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Nueva contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input type="password" class="form-control" id="restablecer-password" required placeholder="Mínimo 8 caracteres">
+              <button class="btn btn-outline-secondary toggle-pass" type="button" data-target="restablecer-password"><i class="bi bi-eye"></i></button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">Confirmar contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input type="password" class="form-control" id="restablecer-confirm" required placeholder="Repite la contraseña">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 mt-2">
+            <i class="bi bi-check-lg me-2"></i>Cambiar contraseña
+          </button>
+          <div id="restablecer-msg" class="alert alert-success mt-3 d-none small" role="alert"></div>
+          <div id="restablecer-error" class="alert alert-danger mt-3 d-none small" role="alert"></div>
         </form>
       </div>
     </div>

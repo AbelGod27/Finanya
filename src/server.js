@@ -30,7 +30,9 @@ app.use('/api/auth/registro', authLimiter);
 
 // Rutas publicas (no requieren autenticacion)
 const authRoutes = require('./routes/auth');
+const recuperacionRoutes = require('./routes/recuperacion');
 app.use('/api/auth', authRoutes);
+app.use('/api/recuperacion', recuperacionRoutes);
 
 // Ruta de health check
 app.get('/api/health', (req, res) => {

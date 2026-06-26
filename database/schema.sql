@@ -132,3 +132,13 @@ CREATE TABLE IF NOT EXISTS actividad_log (
   fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
+
+-- Tabla de Recuperacion de Contrasena
+CREATE TABLE IF NOT EXISTS recuperacion_password (
+  id_recuperacion SERIAL PRIMARY KEY,
+  id_usuario INT NOT NULL,
+  token VARCHAR(255) NOT NULL,
+  fecha_expiracion TIMESTAMP NOT NULL,
+  utilizado BOOLEAN DEFAULT false,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);

@@ -222,6 +222,89 @@ $('#btn-logout').addEventListener('click', () => {
   showToast('Sesión cerrada', 'info');
 });
 
+// ===== RECUPERACION DE CONTRASENA =====
+$('#show-recuperar').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('#login-form').classList.add('d-none');
+  $('#recuperar-form').classList.remove('d-none');
+});
+
+$('#show-login-from-recuperar').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('#recuperar-form').classList.add('d-none');
+  $('#login-form').classList.remove('d-none');
+});
+
+$('#recuperar-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const correo = $('#recuperar-correo').value;
+  try {
+    const data = await request('/recuperacion/solicitar', {
+      method: 'POST',
+      body: JSON.stringify({ correo })
+    });
+    $('#recuperar-msg').textContent = data.mensaje;
+    $('#recuperar-msg').classList.remove('d-none');
+    $('#recuperar-error').classList.add('d-none');
+  } catch (err) {
+    $('#recuperar-error').textContent = err.error || 'Error al enviar';
+    $('#recuperar-error').classList.remove('d-none');
+  }
+});
+
+$('#restablecer-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = $('#restablecer-password').value;
+  const confirm = $('#restablecer-confirm').value;
+
+  if (password !== confirm) {
+    $('#restablecer-error').textContent = 'Las contraseñas no coinciden';
+    $('#restablecer-error').classList.remove('d-none');
+    return;
+  }
+
+  if (password.length < 8) {
+    $('#restablecer-error').textContent = 'La contraseña debe tener al menos 8 caracteres';
+    $('#restablecer-error').classList.remove('d-none');
+    return;
+  }
+
+  try {
+    const token = new URLSearchParams(window.location.search).get('reset');
+    const data = await request('/recuperacion/restablecer', {
+      method: 'POST',
+      body: JSON.stringify({ token, nueva_password: password })
+    });
+    $('#restablecer-msg').textContent = 'Contraseña actualizada. Redirigiendo...';
+    $('#restablecer-msg').classList.remove('d-none');
+    $('#restablecer-error').classList.add('d-none');
+    setTimeout(() => {
+      window.history.replaceState({}, '', window.location.pathname);
+      $('#restablecer-form').classList.add('d-none');
+      $('#login-form').classList.remove('d-none');
+      showToast('Contraseña cambiada exitosamente', 'success');
+    }, 2000);
+  } catch (err) {
+    $('#restablecer-error').textContent = err.error || 'Error al restablecer';
+    $('#restablecer-error').classList.remove('d-none');
+  }
+});
+
+// Detectar token de recuperacion en la URL al cargar
+function checkResetToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('reset');
+  if (token) {
+    // Mostrar formulario de restablecer
+    $('#landing-container').classList.add('d-none');
+    $('#auth-container').classList.remove('d-none');
+    $('#login-form').classList.add('d-none');
+    $('#registro-form').classList.add('d-none');
+    $('#recuperar-form').classList.add('d-none');
+    $('#restablecer-form').classList.remove('d-none');
+  }
+}
+
 // ===== NAVIGATION =====
 $$('.nav-link[data-section]').forEach(link => {
   link.addEventListener('click', (e) => {
@@ -1994,9 +2077,11 @@ if (saved && savedToken) {
   currentUser = JSON.parse(saved);
   showApp();
 } else {
-  // Si hay usuario pero no token, limpiar sesión vieja
   localStorage.removeItem('finanya-user');
   localStorage.removeItem('finanya-token');
-  // Show landing page by default
-  $('#landing-container').classList.remove('d-none');
+  // Verificar si hay token de recuperacion en la URL
+  checkResetToken();
+  if (!new URLSearchParams(window.location.search).get('reset')) {
+    $('#landing-container').classList.remove('d-none');
+  }
 }
