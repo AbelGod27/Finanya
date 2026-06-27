@@ -249,6 +249,8 @@ $('#recuperar-form').addEventListener('submit', async (e) => {
       $('#recuperar-msg').textContent = data.mensaje;
       $('#recuperar-msg').classList.remove('d-none');
       $('#recuperar-error').classList.add('d-none');
+      // Mostrar aviso de spam
+      showToast('Revisa tu carpeta de Spam o No deseado', 'warning');
     } else {
       $('#recuperar-error').textContent = data.error || 'Error al enviar';
       $('#recuperar-error').classList.remove('d-none');
