@@ -77,11 +77,17 @@ router.post('/solicitar', async (req, res) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (emailError) {
+      console.error('Error enviando correo:', emailError.message);
+      // No revelar el error al usuario
+    }
+
     res.json({ mensaje: mensajeGenerico });
   } catch (error) {
     console.error('Error en recuperacion:', error.message);
-    res.status(500).json({ error: 'Error al procesar la solicitud. Verifica la configuración del correo.' });
+    res.json({ mensaje: 'Si el correo está registrado, recibirás un enlace de recuperación.' });
   }
 });
 
