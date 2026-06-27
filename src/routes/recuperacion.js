@@ -80,9 +80,8 @@ router.post('/solicitar', async (req, res) => {
     await transporter.sendMail(mailOptions);
     res.json({ mensaje: mensajeGenerico });
   } catch (error) {
-    console.error('Error en recuperacion:', error);
-    // Siempre responder con mensaje generico
-    res.json({ mensaje: 'Si el correo está registrado, recibirás un enlace de recuperación.' });
+    console.error('Error en recuperacion:', error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud. Verifica la configuración del correo.' });
   }
 });
 
