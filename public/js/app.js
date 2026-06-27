@@ -239,16 +239,25 @@ $('#recuperar-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const correo = $('#recuperar-correo').value;
   try {
-    const data = await request('/recuperacion/solicitar', {
+    const res = await fetch(`${API}/recuperacion/solicitar`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ correo })
     });
-    $('#recuperar-msg').textContent = data.mensaje;
-    $('#recuperar-msg').classList.remove('d-none');
-    $('#recuperar-error').classList.add('d-none');
+    const data = await res.json();
+    if (data.mensaje) {
+      $('#recuperar-msg').textContent = data.mensaje;
+      $('#recuperar-msg').classList.remove('d-none');
+      $('#recuperar-error').classList.add('d-none');
+    } else {
+      $('#recuperar-error').textContent = data.error || 'Error al enviar';
+      $('#recuperar-error').classList.remove('d-none');
+      $('#recuperar-msg').classList.add('d-none');
+    }
   } catch (err) {
-    $('#recuperar-error').textContent = err.error || 'Error al enviar';
+    $('#recuperar-error').textContent = 'Error de conexión. Intenta más tarde.';
     $('#recuperar-error').classList.remove('d-none');
+    $('#recuperar-msg').classList.add('d-none');
   }
 });
 
