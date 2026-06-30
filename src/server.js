@@ -57,6 +57,8 @@ app.use('/api/metas', autenticacionMiddleware, metasRoutes);
 app.use('/api/presupuestos', autenticacionMiddleware, presupuestosRoutes);
 app.use('/api/cuentas', autenticacionMiddleware, cuentasRoutes);
 app.use('/api/transferencias', autenticacionMiddleware, transferenciasRoutes);
+const mensajesRoutes = require('./routes/mensajes');
+app.use('/api/mensajes', autenticacionMiddleware, mensajesRoutes);
 app.use('/api/admin', autenticacionMiddleware, autorizacionAdmin, adminRoutes);
 
 // Middleware global de errores (debe ir al final)

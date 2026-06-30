@@ -446,6 +446,7 @@ function showApp() {
   loadUserAvatar();
   checkAdmin();
   checkOnboarding();
+  initChat();
 }
 
 async function loadUserAvatar() {
@@ -1869,6 +1870,97 @@ $('#avatar-input').addEventListener('change', async (e) => {
   }
 });
 
+// ===== CHAT USUARIO =====
+let chatInterval = null;
+let adminId = null;
+
+function initChat() {
+  $('#user-chat-widget').classList.remove('d-none');
+  checkNewMessages();
+  // Polling cada 5 segundos para mensajes nuevos
+  chatInterval = setInterval(checkNewMessages, 5000);
+}
+
+async function checkNewMessages() {
+  try {
+    const data = await request(`/mensajes/no-leidos/${currentUser.id_usuario}`);
+    const badge = $('#chat-badge');
+    if (data.no_leidos > 0) {
+      badge.textContent = data.no_leidos;
+      badge.classList.remove('d-none');
+    } else {
+      badge.classList.add('d-none');
+    }
+  } catch (e) {}
+}
+
+$('#btn-open-chat').addEventListener('click', () => {
+  $('#chat-panel').classList.toggle('d-none');
+  if (!$('#chat-panel').classList.contains('d-none')) {
+    loadChatMessages();
+    markMessagesRead();
+  }
+});
+
+$('#btn-close-chat').addEventListener('click', () => {
+  $('#chat-panel').classList.add('d-none');
+});
+
+async function loadChatMessages() {
+  try {
+    const mensajes = await request(`/mensajes/usuario/${currentUser.id_usuario}`);
+    const container = $('#chat-messages');
+    if (mensajes.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center fst-italic small py-4">No hay mensajes. Escribe al soporte.</p>';
+      return;
+    }
+    container.innerHTML = mensajes.map(m => {
+      const isMine = m.id_remitente === currentUser.id_usuario;
+      const time = new Date(m.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="chat-bubble ${isMine ? 'chat-bubble-sent' : 'chat-bubble-received'}">
+        ${m.contenido}
+        <div class="chat-bubble-time">${time}</div>
+      </div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  } catch (e) {}
+}
+
+async function markMessagesRead() {
+  try { await request(`/mensajes/leer/${currentUser.id_usuario}`, { method: 'PATCH' }); $('#chat-badge').classList.add('d-none'); } catch(e) {}
+}
+
+$('#btn-send-chat').addEventListener('click', sendChatMessage);
+$('#chat-input').addEventListener('keyup', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+async function sendChatMessage() {
+  const input = $('#chat-input');
+  const contenido = input.value.trim();
+  if (!contenido) return;
+
+  // Encontrar admin para enviar mensaje
+  try {
+    if (!adminId) {
+      const usuarios = await request('/mensajes/usuario/' + currentUser.id_usuario);
+      // Buscar el admin en los mensajes existentes
+      const adminMsg = usuarios.find(m => m.remitente_rol === 'admin');
+      if (adminMsg) {
+        adminId = adminMsg.id_remitente;
+      } else {
+        // Si no hay conversacion previa, buscar cualquier admin (usar id 1 como fallback)
+        adminId = 1;
+      }
+    }
+
+    await request('/mensajes', {
+      method: 'POST',
+      body: JSON.stringify({ id_remitente: currentUser.id_usuario, id_destinatario: adminId, contenido })
+    });
+    input.value = '';
+    loadChatMessages();
+  } catch (err) { showToast(err.error || 'Error al enviar mensaje', 'danger'); }
+}
+
 // ===== ADMIN PANEL =====
 function checkAdmin() {
   if (currentUser && currentUser.rol === 'admin') {
@@ -1881,6 +1973,7 @@ $('#btn-admin-panel').addEventListener('click', () => {
   $('#admin-panel').classList.remove('d-none');
   loadAdminDashboard();
   loadAdminUsuarios();
+  loadAdminChat();
 });
 
 $('#btn-volver-app').addEventListener('click', () => {
@@ -1919,6 +2012,92 @@ async function loadAdminDashboard() {
         </div>`).join('')
       : '<p class="text-muted text-center small">Sin actividad</p>';
   } catch (err) { console.error('Error cargando admin dashboard:', err); }
+}
+
+// ===== CHAT ADMIN =====
+let adminChatUserId = null;
+let adminChatInterval = null;
+
+async function loadAdminChat() {
+  // Cargar lista de usuarios en el select
+  try {
+    const usuarios = await request('/admin/usuarios');
+    const select = $('#admin-chat-usuario');
+    select.innerHTML = '<option value="">Seleccionar usuario...</option>';
+    usuarios.forEach(u => {
+      if (u.id_usuario !== currentUser.id_usuario) {
+        select.innerHTML += `<option value="${u.id_usuario}">${u.nombre} (${u.correo})</option>`;
+      }
+    });
+  } catch(e) {}
+
+  // Cargar conversaciones existentes
+  try {
+    const convs = await request(`/mensajes/admin/conversaciones?admin_id=${currentUser.id_usuario}`);
+    const container = $('#admin-conversaciones');
+    if (convs.length === 0) {
+      container.innerHTML = '<p class="text-muted small text-center">Sin conversaciones</p>';
+    } else {
+      container.innerHTML = convs.map(c => `
+        <div class="d-flex align-items-center gap-2 py-2 border-bottom" style="cursor:pointer;" onclick="openAdminChat(${c.id_usuario})">
+          <div class="user-avatar" style="width:28px;height:28px;font-size:0.7rem;">${c.nombre.charAt(0)}</div>
+          <div class="flex-grow-1">
+            <div class="small fw-medium">${c.nombre}</div>
+            <div class="small text-muted text-truncate" style="max-width:150px;">${c.ultimo_mensaje || ''}</div>
+          </div>
+          ${c.no_leidos > 0 ? `<span class="badge bg-danger rounded-pill">${c.no_leidos}</span>` : ''}
+        </div>
+      `).join('');
+    }
+  } catch(e) {}
+}
+
+$('#admin-chat-usuario').addEventListener('change', (e) => {
+  if (e.target.value) openAdminChat(Number(e.target.value));
+});
+
+window.openAdminChat = async (userId) => {
+  adminChatUserId = userId;
+  await loadAdminChatMessages();
+  // Polling
+  if (adminChatInterval) clearInterval(adminChatInterval);
+  adminChatInterval = setInterval(loadAdminChatMessages, 4000);
+};
+
+async function loadAdminChatMessages() {
+  if (!adminChatUserId) return;
+  try {
+    const mensajes = await request(`/mensajes/admin/chat/${adminChatUserId}?admin_id=${currentUser.id_usuario}`);
+    const container = $('#admin-chat-messages');
+    if (mensajes.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center fst-italic small py-4">Sin mensajes con este usuario</p>';
+      return;
+    }
+    container.innerHTML = mensajes.map(m => {
+      const isMine = m.id_remitente === currentUser.id_usuario;
+      const time = new Date(m.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="${isMine ? 'admin-bubble-sent' : 'admin-bubble-received'}">${m.contenido}<br><small class="text-muted">${time}</small></div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {}
+}
+
+$('#btn-admin-enviar').addEventListener('click', sendAdminMessage);
+$('#admin-chat-input').addEventListener('keyup', (e) => { if (e.key === 'Enter') sendAdminMessage(); });
+
+async function sendAdminMessage() {
+  const input = $('#admin-chat-input');
+  const contenido = input.value.trim();
+  if (!contenido || !adminChatUserId) return;
+
+  try {
+    await request('/mensajes', {
+      method: 'POST',
+      body: JSON.stringify({ id_remitente: currentUser.id_usuario, id_destinatario: adminChatUserId, contenido })
+    });
+    input.value = '';
+    loadAdminChatMessages();
+  } catch (err) { showToast(err.error || 'Error al enviar', 'danger'); }
 }
 
 async function loadAdminUsuarios() {

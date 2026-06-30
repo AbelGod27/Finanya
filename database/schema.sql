@@ -142,3 +142,15 @@ CREATE TABLE IF NOT EXISTS recuperacion_password (
   utilizado BOOLEAN DEFAULT false,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
+
+-- Tabla de Mensajes
+CREATE TABLE IF NOT EXISTS mensajes (
+  id_mensaje SERIAL PRIMARY KEY,
+  id_remitente INT NOT NULL,
+  id_destinatario INT NOT NULL,
+  contenido TEXT NOT NULL,
+  leido BOOLEAN DEFAULT false,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_remitente) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  FOREIGN KEY (id_destinatario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);
