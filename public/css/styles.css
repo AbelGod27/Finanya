@@ -666,3 +666,53 @@ body {
 /* Admin chat bubble styles */
 .admin-bubble-sent { background: var(--primary-light); border-radius: 12px; padding: 0.5rem 0.8rem; margin-bottom: 0.4rem; font-size: 0.82rem; margin-left: auto; max-width: 75%; text-align: right; }
 .admin-bubble-received { background: var(--border); border-radius: 12px; padding: 0.5rem 0.8rem; margin-bottom: 0.4rem; font-size: 0.82rem; max-width: 75%; }
+
+
+/* ===== FIX: Botones en tablas y tarjetas en móvil ===== */
+@media (max-width: 768px) {
+  /* Botones de accion en tablas: más espacio */
+  .table td .btn {
+    margin-bottom: 4px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .table td .btn + .btn {
+    margin-left: 6px;
+  }
+
+  /* Botones en tarjetas de metas/presupuestos */
+  .card-body .d-flex.gap-2,
+  .card-body .d-flex.flex-wrap {
+    gap: 0.5rem !important;
+  }
+  .card-body .d-flex .btn-sm {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.75rem;
+  }
+
+  /* Botones de transferencias */
+  .section-top .d-flex.flex-wrap {
+    gap: 0.5rem !important;
+  }
+  .section-top .d-flex.flex-wrap .btn {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.5rem;
+  }
+
+  /* Filtro de categorias full width */
+  #filtro-cat-tipo {
+    max-width: 100% !important;
+  }
+
+  /* Admin panel botones */
+  #admin-panel .d-flex.gap-1 {
+    gap: 0.4rem !important;
+  }
+  #admin-panel .d-flex.gap-1 .btn {
+    min-width: 30px;
+    min-height: 30px;
+  }
+}
