@@ -1197,11 +1197,15 @@ $('#btn-meta-a-meta').addEventListener('click', async () => {
 $('#btn-nueva-meta').addEventListener('click', () => {
   openModal('Nueva Meta de Ahorro', [
     { name: 'nombre', label: 'Nombre de la meta', required: true, placeholder: 'Ej: Vacaciones' },
-    { name: 'monto_objetivo', label: 'Monto objetivo', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
-    { name: 'fecha_inicio', label: 'Fecha de inicio', type: 'date', required: true, value: new Date().toISOString().split('T')[0] },
-    { name: 'fecha_limite', label: 'Fecha límite', type: 'date', required: true }
+    { name: 'monto_objetivo', label: 'Monto objetivo (opcional)', type: 'number', step: '0.01', min: '0.01', placeholder: 'Sin límite' },
+    { name: 'fecha_inicio', label: 'Fecha de inicio (opcional)', type: 'date' },
+    { name: 'fecha_limite', label: 'Fecha límite (opcional)', type: 'date' }
   ], async (data) => {
     try {
+      // Limpiar campos vacíos
+      if (!data.monto_objetivo) delete data.monto_objetivo;
+      if (!data.fecha_inicio) delete data.fecha_inicio;
+      if (!data.fecha_limite) delete data.fecha_limite;
       await request('/metas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadMetas();
@@ -1220,23 +1224,33 @@ async function loadMetas() {
       return;
     }
     container.innerHTML = metas.map(m => {
-      const pct = Math.min(Number(m.porcentaje_avance || 0), 100);
+      const hasObjectivo = m.monto_objetivo && Number(m.monto_objetivo) > 0;
+      const pct = hasObjectivo ? Math.min(Number(m.porcentaje_avance || 0), 100) : 0;
       const barColor = pct >= 100 ? 'bg-success' : pct >= 50 ? 'bg-primary' : 'bg-warning';
       return `
       <div class="col-md-6 col-lg-4">
         <div class="card h-100">
           <div class="card-body">
             <h6 class="card-title"><i class="bi bi-bullseye text-warning"></i> ${m.nombre}</h6>
-            <div class="progress mb-2" style="height: 10px;">
-              <div class="progress-bar ${barColor}" style="width: ${pct}%"></div>
-            </div>
-            <div class="d-flex justify-content-between small text-muted">
-              <span>${formatMoney(m.monto_actual)} / ${formatMoney(m.monto_objetivo)}</span>
-              <span class="fw-bold">${pct}%</span>
-            </div>
+            ${hasObjectivo ? `
+              <div class="progress mb-2" style="height: 10px;">
+                <div class="progress-bar ${barColor}" style="width: ${pct}%"></div>
+              </div>
+              <div class="d-flex justify-content-between small text-muted">
+                <span>${formatMoney(m.monto_actual)} / ${formatMoney(m.monto_objetivo)}</span>
+                <span class="fw-bold">${pct}%</span>
+              </div>
+            ` : `
+              <div class="d-flex justify-content-between small text-muted mb-2">
+                <span>Ahorrado:</span>
+                <span class="fw-bold fs-6">${formatMoney(m.monto_actual)}</span>
+              </div>
+              <small class="text-muted">Sin monto objetivo definido</small>
+            `}
+            ${m.fecha_limite ? `<small class="d-block text-muted mt-1"><i class="bi bi-calendar3 me-1"></i>Límite: ${new Date(m.fecha_limite).toLocaleDateString('es-MX')}</small>` : ''}
             <div class="mt-3 d-flex gap-2 flex-wrap">
               <button class="btn btn-sm btn-outline-primary" onclick="aportarMeta(${m.id_meta})"><i class="bi bi-plus"></i> Aporte</button>
-              <button class="btn btn-sm btn-outline-secondary" onclick="editarMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}', ${m.monto_objetivo}, ${m.monto_actual})"><i class="bi bi-pencil"></i> Editar</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="editarMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}', ${m.monto_objetivo || 0}, ${m.monto_actual})"><i class="bi bi-pencil"></i> Editar</button>
               <button class="btn btn-sm btn-outline-danger" onclick="deleteMeta(${m.id_meta})"><i class="bi bi-trash"></i></button>
             </div>
           </div>

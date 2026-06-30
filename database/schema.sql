@@ -79,10 +79,10 @@ CREATE TABLE IF NOT EXISTS metas_ahorro (
   id_meta SERIAL PRIMARY KEY,
   id_usuario INT NOT NULL,
   nombre VARCHAR(100) NOT NULL,
-  monto_objetivo DECIMAL(12,2) NOT NULL,
+  monto_objetivo DECIMAL(12,2) DEFAULT NULL,
   monto_actual DECIMAL(12,2) DEFAULT 0.00,
-  fecha_inicio DATE NOT NULL,
-  fecha_limite DATE NOT NULL,
+  fecha_inicio DATE DEFAULT NULL,
+  fecha_limite DATE DEFAULT NULL,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 
