@@ -376,9 +376,38 @@ function openModal(title, fields, onSubmit) {
   const body = $('#modal-body');
   body.innerHTML = '';
 
+  let wrapperDiv = null;
+
   fields.forEach(f => {
+    // Tipo HTML (para separadores, links, etc)
+    if (f.type === 'html') {
+      const div = document.createElement('div');
+      div.className = 'mb-3';
+      div.innerHTML = f.label;
+      body.appendChild(div);
+      return;
+    }
+
     const group = document.createElement('div');
     group.className = 'mb-3';
+
+    // Si tiene wrapper, agregarlo dentro de un contenedor colapsable
+    if (f.wrapper) {
+      if (!wrapperDiv || wrapperDiv.id !== f.wrapper) {
+        wrapperDiv = document.createElement('div');
+        wrapperDiv.id = f.wrapper;
+        wrapperDiv.className = 'd-none';
+        body.appendChild(wrapperDiv);
+      }
+      if (f.type === 'select') {
+        group.innerHTML = `<label class="form-label">${f.label}</label><select class="form-select" name="${f.name}" ${f.required ? 'required' : ''}>${f.options.map(o => `<option value="${o.value}" ${o.selected ? 'selected' : ''}>${o.label}</option>`).join('')}</select>`;
+      } else {
+        group.innerHTML = `<label class="form-label">${f.label}</label><input type="${f.type || 'text'}" class="form-control" name="${f.name}" value="${f.value || ''}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.min ? `min="${f.min}"` : ''} placeholder="${f.placeholder || ''}">`;
+      }
+      wrapperDiv.appendChild(group);
+      return;
+    }
+
     if (f.type === 'select') {
       group.innerHTML = `<label class="form-label">${f.label}</label><select class="form-select" name="${f.name}" ${f.required ? 'required' : ''}>${f.options.map(o => `<option value="${o.value}" ${o.selected ? 'selected' : ''}>${o.label}</option>`).join('')}</select>`;
     } else {
@@ -1197,15 +1226,16 @@ $('#btn-meta-a-meta').addEventListener('click', async () => {
 $('#btn-nueva-meta').addEventListener('click', () => {
   openModal('Nueva Meta de Ahorro', [
     { name: 'nombre', label: 'Nombre de la meta', required: true, placeholder: 'Ej: Vacaciones' },
-    { name: 'monto_objetivo', label: 'Monto objetivo (opcional)', type: 'number', step: '0.01', min: '0.01', placeholder: 'Sin límite' },
-    { name: 'fecha_inicio', label: 'Fecha de inicio (opcional)', type: 'date' },
-    { name: 'fecha_limite', label: 'Fecha límite (opcional)', type: 'date' }
+    { name: '_separator', label: '<a href="#" class="small text-primary" onclick="document.getElementById(\'meta-opciones-extra\').classList.toggle(\'d-none\'); return false;"><i class="bi bi-gear me-1"></i>Más opciones</a>', type: 'html' },
+    { name: 'monto_objetivo', label: 'Monto objetivo', type: 'number', step: '0.01', min: '0.01', placeholder: 'Sin límite', wrapper: 'meta-opciones-extra', hidden: true },
+    { name: 'fecha_inicio', label: 'Fecha de inicio', type: 'date', wrapper: 'meta-opciones-extra', hidden: true },
+    { name: 'fecha_limite', label: 'Fecha límite', type: 'date', wrapper: 'meta-opciones-extra', hidden: true }
   ], async (data) => {
     try {
-      // Limpiar campos vacíos
       if (!data.monto_objetivo) delete data.monto_objetivo;
       if (!data.fecha_inicio) delete data.fecha_inicio;
       if (!data.fecha_limite) delete data.fecha_limite;
+      delete data._separator;
       await request('/metas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadMetas();
