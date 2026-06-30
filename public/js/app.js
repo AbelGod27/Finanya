@@ -761,9 +761,9 @@ function renderCategorias() {
       <tr>
         <td class="fw-medium">${c.nombre}</td>
         <td><span class="badge rounded-pill bg-${c.tipo === 'ingreso' ? 'success' : 'danger'} bg-opacity-10 text-${c.tipo === 'ingreso' ? 'success' : 'danger'} text-uppercase">${c.tipo}</span></td>
-        <td class="text-end">
-          <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editCategoria(${c.id_categoria})" title="Editar"><i class="bi bi-pencil"></i></button>
-          <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteCategoria(${c.id_categoria})" title="Eliminar"><i class="bi bi-trash"></i></button>
+        <td class="text-end text-nowrap">
+          <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="editCategoria(${c.id_categoria})" title="Editar"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger rounded-circle ms-2" onclick="deleteCategoria(${c.id_categoria})" title="Eliminar"><i class="bi bi-trash"></i></button>
         </td>
       </tr>
     `).join('')}</tbody>

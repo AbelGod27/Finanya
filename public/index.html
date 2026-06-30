@@ -419,14 +419,14 @@
       <section id="section-categorias" class="section d-none">
         <div class="section-top">
           <h4 class="fw-bold"><i class="bi bi-tags text-primary me-2"></i>Categorías<span class="help-icon" data-bs-toggle="tooltip" title="Organiza tus movimientos en categorias como Alimentacion, Transporte, Salario, etc.">?</span></h4>
-          <div class="d-flex gap-2 align-items-center">
-            <select class="form-select form-select-sm rounded-pill" id="filtro-cat-tipo" style="width: auto;">
-              <option value="">Todas</option>
-              <option value="ingreso">Ingresos</option>
-              <option value="gasto">Gastos</option>
-            </select>
-            <button class="btn btn-primary rounded-pill" id="btn-nueva-categoria"><i class="bi bi-plus-lg"></i> Nueva</button>
-          </div>
+          <button class="btn btn-primary rounded-pill" id="btn-nueva-categoria"><i class="bi bi-plus-lg"></i> Nueva</button>
+        </div>
+        <div class="mb-3">
+          <select class="form-select form-select-sm rounded-pill" id="filtro-cat-tipo" style="max-width: 200px;">
+            <option value="">Todas las categorías</option>
+            <option value="ingreso">Solo ingresos</option>
+            <option value="gasto">Solo gastos</option>
+          </select>
         </div>
         <div class="content-card">
           <div class="content-card-body" id="lista-categorias">
