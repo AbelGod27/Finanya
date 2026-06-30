@@ -1872,12 +1872,10 @@ $('#avatar-input').addEventListener('change', async (e) => {
 
 // ===== CHAT USUARIO =====
 let chatInterval = null;
-let adminId = null;
 
 function initChat() {
   $('#user-chat-widget').classList.remove('d-none');
   checkNewMessages();
-  // Polling cada 5 segundos para mensajes nuevos
   chatInterval = setInterval(checkNewMessages, 5000);
 }
 
@@ -1911,13 +1909,12 @@ async function loadChatMessages() {
     const mensajes = await request(`/mensajes/usuario/${currentUser.id_usuario}`);
     const container = $('#chat-messages');
     if (mensajes.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center fst-italic small py-4">No hay mensajes. Escribe al soporte.</p>';
+      container.innerHTML = '<p class="text-muted text-center fst-italic small py-4">No hay notificaciones del administrador.</p>';
       return;
     }
     container.innerHTML = mensajes.map(m => {
-      const isMine = m.id_remitente === currentUser.id_usuario;
-      const time = new Date(m.fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-      return `<div class="chat-bubble ${isMine ? 'chat-bubble-sent' : 'chat-bubble-received'}">
+      const time = new Date(m.fecha).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      return `<div class="chat-bubble chat-bubble-received">
         ${m.contenido}
         <div class="chat-bubble-time">${time}</div>
       </div>`;
@@ -1928,37 +1925,6 @@ async function loadChatMessages() {
 
 async function markMessagesRead() {
   try { await request(`/mensajes/leer/${currentUser.id_usuario}`, { method: 'PATCH' }); $('#chat-badge').classList.add('d-none'); } catch(e) {}
-}
-
-$('#btn-send-chat').addEventListener('click', sendChatMessage);
-$('#chat-input').addEventListener('keyup', (e) => { if (e.key === 'Enter') sendChatMessage(); });
-
-async function sendChatMessage() {
-  const input = $('#chat-input');
-  const contenido = input.value.trim();
-  if (!contenido) return;
-
-  // Encontrar admin para enviar mensaje
-  try {
-    if (!adminId) {
-      const usuarios = await request('/mensajes/usuario/' + currentUser.id_usuario);
-      // Buscar el admin en los mensajes existentes
-      const adminMsg = usuarios.find(m => m.remitente_rol === 'admin');
-      if (adminMsg) {
-        adminId = adminMsg.id_remitente;
-      } else {
-        // Si no hay conversacion previa, buscar cualquier admin (usar id 1 como fallback)
-        adminId = 1;
-      }
-    }
-
-    await request('/mensajes', {
-      method: 'POST',
-      body: JSON.stringify({ id_remitente: currentUser.id_usuario, id_destinatario: adminId, contenido })
-    });
-    input.value = '';
-    loadChatMessages();
-  } catch (err) { showToast(err.error || 'Error al enviar mensaje', 'danger'); }
 }
 
 // ===== ADMIN PANEL =====
