@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 
 const router = express.Router();
@@ -187,6 +188,31 @@ router.delete('/usuarios/:id', async (req, res) => {
     res.json({ mensaje: 'Usuario eliminado' });
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Resetear contraseña de usuario (admin)
+router.patch('/usuarios/:id/password', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { nueva_password } = req.body;
+
+    if (!nueva_password || nueva_password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+
+    const password_hash = await bcrypt.hash(nueva_password, 10);
+    await pool.query('UPDATE usuarios SET password_hash = $1 WHERE id_usuario = $2', [password_hash, id]);
+
+    await pool.query(
+      'INSERT INTO actividad_log (id_usuario, accion, detalle) VALUES ($1, $2, $3)',
+      [req.usuario.id_usuario, 'reset_password', `Contraseña reseteada para usuario #${id}`]
+    );
+
+    res.json({ mensaje: 'Contraseña actualizada exitosamente' });
+  } catch (error) {
+    console.error('Error al resetear contraseña:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

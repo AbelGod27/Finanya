@@ -2161,6 +2161,7 @@ async function loadAdminUsuarios() {
                 <div class="d-flex gap-1">
                   <button class="btn btn-sm btn-outline-${u.activo ? 'warning' : 'success'} rounded-circle" onclick="toggleUsuario(${u.id_usuario}, ${!u.activo})" title="${u.activo ? 'Desactivar' : 'Activar'}"><i class="bi bi-${u.activo ? 'pause' : 'play'}"></i></button>
                   <button class="btn btn-sm btn-outline-primary rounded-circle" onclick="cambiarRol(${u.id_usuario}, '${u.rol === 'admin' ? 'usuario' : 'admin'}')" title="Cambiar rol"><i class="bi bi-arrow-repeat"></i></button>
+                  <button class="btn btn-sm btn-outline-info rounded-circle" onclick="resetPasswordAdmin(${u.id_usuario}, '${u.nombre.replace(/'/g, "\\'")}')" title="Resetear contraseña"><i class="bi bi-key"></i></button>
                   <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarUsuarioAdmin(${u.id_usuario})" title="Eliminar"><i class="bi bi-trash"></i></button>
                 </div>
               </td>
@@ -2198,6 +2199,18 @@ window.eliminarUsuarioAdmin = async (id) => {
       loadAdminUsuarios();
       loadAdminDashboard();
     } catch (err) { showToast(err.error || 'Error', 'danger'); }
+  });
+};
+
+window.resetPasswordAdmin = (id, nombre) => {
+  openModal(`Resetear contraseña - ${nombre}`, [
+    { name: 'nueva_password', label: 'Nueva contraseña', type: 'password', required: true, placeholder: 'Mínimo 8 caracteres' }
+  ], async (data) => {
+    try {
+      await request(`/admin/usuarios/${id}/password`, { method: 'PATCH', body: JSON.stringify(data) });
+      closeModal();
+      showToast('Contraseña reseteada exitosamente', 'success');
+    } catch (err) { showToast(err.error || 'Error al resetear contraseña', 'danger'); }
   });
 };
 
