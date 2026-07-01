@@ -605,7 +605,7 @@ select.form-select option:checked {
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 992px) {
+@media (max-width: 1199px) {
   .app-main { padding: 1.25rem 1rem; }
   .stat-card-value { font-size: 1.3rem; }
 }
@@ -683,6 +683,76 @@ select.form-select option:checked {
   .section-top .d-flex {
     flex-direction: row !important;
     flex-wrap: wrap;
+  }
+}
+
+/* ===== NAVBAR: scrollable en pantallas medianas/landscape ===== */
+@media (min-width: 1200px) and (max-height: 500px) {
+  .app-navbar .navbar-collapse {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .app-navbar .navbar-nav {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.15rem !important;
+  }
+  .app-navbar .navbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .app-navbar .nav-link {
+    white-space: nowrap;
+    font-size: 0.72rem !important;
+    padding: 0.35rem 0.55rem !important;
+  }
+  .app-navbar .nav-link i {
+    display: none;
+  }
+  .app-navbar .navbar-brand {
+    font-size: 0.85rem;
+  }
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.7rem;
+  }
+  .user-avatar img {
+    width: 28px;
+    height: 28px;
+  }
+  #user-name {
+    display: none !important;
+  }
+}
+
+/* ===== DASHBOARD: stat cards en landscape ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-main {
+    padding: 0.75rem 1rem;
+  }
+  .stat-card {
+    padding: 0.75rem;
+  }
+  .stat-card-value {
+    font-size: 1rem;
+  }
+  .stat-card-label {
+    font-size: 0.65rem;
+  }
+  .stat-card-icon {
+    font-size: 1rem;
+  }
+  .content-card-header {
+    padding: 0.6rem 0.8rem;
+  }
+  .content-card-body {
+    padding: 0.7rem;
+  }
+  .motivation-banner {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
   }
 }
 
