@@ -1,20 +1,19 @@
 const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const pool = require('../config/db');
 
 const router = express.Router();
 
-// Configurar Resend (API HTTP, no necesita puertos SMTP)
-let resend = null;
-
-if (process.env.RESEND_API_KEY) {
-  resend = new Resend(process.env.RESEND_API_KEY);
-  console.log('✅ Resend configurado para envío de correos');
-} else {
-  console.warn('⚠️ RESEND_API_KEY no configurada. Correos deshabilitados.');
-}
+// Configurar transporter de Nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 // Solicitar recuperacion de contrasena
 router.post('/solicitar', async (req, res) => {
@@ -58,38 +57,30 @@ router.post('/solicitar', async (req, res) => {
     const baseUrl = process.env.APP_URL || 'https://finanya.onrender.com';
     const enlace = `${baseUrl}?reset=${token}`;
 
-    // Enviar correo via Resend
-    try {
-      if (!resend) {
-        console.error('❌ No se puede enviar correo: Resend no configurado');
-      } else {
-        const { data, error } = await resend.emails.send({
-          from: 'Finanya <onboarding@resend.dev>',
-          to: [correo],
-          subject: 'Recuperación de contraseña - Finanya',
-          html: `
-            <div style="font-family: 'Montserrat', sans-serif; max-width: 500px; margin: 0 auto; padding: 2rem; background: #f8fafc; border-radius: 16px;">
-              <h2 style="color: #1e293b; text-align: center;">Recuperar Contraseña</h2>
-              <p style="color: #64748b;">Hola <strong>${usuario.nombre}</strong>,</p>
-              <p style="color: #64748b;">Recibimos una solicitud para restablecer tu contraseña en Finanya.</p>
-              <div style="text-align: center; margin: 2rem 0;">
-                <a href="${enlace}" style="background: #38bdf8; color: #0f172a; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-block;">Restablecer Contraseña</a>
-              </div>
-              <p style="color: #94a3b8; font-size: 0.85rem;">Este enlace expira en 30 minutos. Si no solicitaste este cambio, ignora este correo.</p>
-              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
-              <p style="color: #94a3b8; font-size: 0.75rem; text-align: center;">Finanya - Gestión Financiera Personal</p>
-            </div>
-          `
-        });
+    // Enviar correo
+    const mailOptions = {
+      from: `"Finanya" <${process.env.EMAIL_USER}>`,
+      to: correo,
+      subject: 'Recuperación de contraseña - Finanya',
+      html: `
+        <div style="font-family: 'Montserrat', sans-serif; max-width: 500px; margin: 0 auto; padding: 2rem; background: #f8fafc; border-radius: 16px;">
+          <h2 style="color: #1e293b; text-align: center;">Recuperar Contraseña</h2>
+          <p style="color: #64748b;">Hola <strong>${usuario.nombre}</strong>,</p>
+          <p style="color: #64748b;">Recibimos una solicitud para restablecer tu contraseña en Finanya.</p>
+          <div style="text-align: center; margin: 2rem 0;">
+            <a href="${enlace}" style="background: #38bdf8; color: #0f172a; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-block;">Restablecer Contraseña</a>
+          </div>
+          <p style="color: #94a3b8; font-size: 0.85rem;">Este enlace expira en 30 minutos. Si no solicitaste este cambio, ignora este correo.</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
+          <p style="color: #94a3b8; font-size: 0.75rem; text-align: center;">Finanya - Gestión Financiera Personal</p>
+        </div>
+      `
+    };
 
-        if (error) {
-          console.error('❌ Error enviando correo:', error.message);
-        } else {
-          console.log('✅ Correo enviado:', data.id);
-        }
-      }
+    try {
+      await transporter.sendMail(mailOptions);
     } catch (emailError) {
-      console.error('❌ Error enviando correo:', emailError.message);
+      console.error('Error enviando correo:', emailError.message);
     }
 
     res.json({ mensaje: mensajeGenerico });
