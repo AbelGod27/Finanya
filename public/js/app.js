@@ -1993,17 +1993,32 @@ function checkAdmin() {
   }
 }
 
+let adminRefreshInterval = null;
+
 $('#btn-admin-panel').addEventListener('click', () => {
   document.querySelector('.app-main').classList.add('d-none');
   $('#admin-panel').classList.remove('d-none');
   loadAdminDashboard();
   loadAdminUsuarios();
   loadAdminChat();
+
+  // Auto-refresh cada 10 segundos mientras el admin panel esté abierto
+  if (adminRefreshInterval) clearInterval(adminRefreshInterval);
+  adminRefreshInterval = setInterval(() => {
+    loadAdminDashboard();
+    loadAdminUsuarios();
+  }, 10000);
 });
 
 $('#btn-volver-app').addEventListener('click', () => {
   $('#admin-panel').classList.add('d-none');
   document.querySelector('.app-main').classList.remove('d-none');
+
+  // Detener auto-refresh al salir del panel admin
+  if (adminRefreshInterval) {
+    clearInterval(adminRefreshInterval);
+    adminRefreshInterval = null;
+  }
 });
 
 $('#btn-admin-buscar').addEventListener('click', () => loadAdminUsuarios());
