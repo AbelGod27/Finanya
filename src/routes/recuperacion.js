@@ -7,13 +7,28 @@ const pool = require('../config/db');
 const router = express.Router();
 
 // Configurar transporter de Nodemailer
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+let transporter = null;
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  // Verificar conexión SMTP al iniciar
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Error configurando correo SMTP:', error.message);
+    } else {
+      console.log('✅ Servidor de correo listo para enviar');
+    }
+  });
+} else {
+  console.warn('⚠️ EMAIL_USER o EMAIL_PASS no configurados. Correos deshabilitados.');
+}
 
 // Solicitar recuperacion de contrasena
 router.post('/solicitar', async (req, res) => {
@@ -78,10 +93,15 @@ router.post('/solicitar', async (req, res) => {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      if (!transporter) {
+        console.error('❌ No se puede enviar correo: transporter no configurado');
+      } else {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('✅ Correo enviado:', info.messageId);
+      }
     } catch (emailError) {
-      console.error('Error enviando correo:', emailError.message);
-      // No revelar el error al usuario
+      console.error('❌ Error enviando correo:', emailError.message);
+      console.error('   Detalle:', emailError.code, emailError.response);
     }
 
     res.json({ mensaje: mensajeGenerico });
