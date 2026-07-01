@@ -686,8 +686,30 @@ select.form-select option:checked {
   }
 }
 
-/* ===== NAVBAR: scrollable en pantallas medianas/landscape ===== */
-@media (min-width: 1200px) and (max-height: 500px) {
+/* ===== NAVBAR: forzar colapso en mobile landscape ===== */
+@media (max-height: 600px) and (orientation: landscape) {
+  .navbar-collapse {
+    display: none !important;
+  }
+  .navbar-collapse.show {
+    display: block !important;
+  }
+  .navbar-toggler {
+    display: block !important;
+  }
+  .app-navbar .navbar-nav {
+    flex-direction: column;
+    gap: 0.25rem !important;
+    padding: 0.5rem 0;
+  }
+  .app-navbar .nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* ===== NAVBAR: scrollable en pantallas muy anchas landscape ===== */
+@media (min-width: 1400px) and (max-height: 500px) {
   .app-navbar .navbar-collapse {
     overflow-x: auto;
     overflow-y: hidden;
