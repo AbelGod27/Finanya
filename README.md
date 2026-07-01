@@ -125,10 +125,13 @@ URL de produccion: https://finanya.onrender.com
 - Tipografia Montserrat
 - Animaciones suaves al hover
 - Diseno responsive (movil, tablet, escritorio)
+- Soporte completo para orientacion landscape en moviles
 - Modo oscuro / claro con toggle
 - Landing page con hero animado, features y footer
 - Toasts de exito/error/advertencia
 - Modal de confirmacion antes de eliminar
+- Custom select dropdown (reemplaza el select nativo para consistencia visual en Android/iOS)
+- Botones con ancho controlado que no se expanden en landscape
 - Ayuda contextual con iconos "?" y tooltips
 - Onboarding guiado de 7 pasos
 - Avatar con inicial o foto
