@@ -135,6 +135,100 @@ body {
 }
 .form-control::placeholder { color: var(--text-light); }
 
+/* ===== CUSTOM SELECT (reemplaza <select> nativo) ===== */
+.custom-select-wrapper {
+  position: relative;
+}
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border);
+  padding: 0.65rem 1rem;
+  font-size: 0.88rem;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+.custom-select-trigger:hover {
+  border-color: var(--primary);
+}
+.custom-select-trigger.open {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+.custom-select-trigger::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: var(--transition);
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+.custom-select-trigger.open::after {
+  transform: rotate(-135deg);
+}
+.custom-select-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs);
+  box-shadow: var(--shadow);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1050;
+  display: none;
+}
+.custom-select-options.show {
+  display: block;
+}
+.custom-select-option {
+  padding: 0.6rem 1rem;
+  font-size: 0.86rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.custom-select-option:hover {
+  background: var(--primary-light);
+  color: var(--primary-hover);
+}
+.custom-select-option.selected {
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+.custom-select-options::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-select-options::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-select-options::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* Fix: selects nativos en Android WebView - forzar fondo claro */
+select.form-select,
+select.form-select option {
+  background-color: var(--bg-card) !important;
+  color: var(--text) !important;
+}
+select.form-select option:checked {
+  background-color: var(--primary-light) !important;
+  color: var(--primary-hover) !important;
+}
+
 .form-label {
   font-size: 0.75rem;
   font-weight: 700;
@@ -547,6 +641,13 @@ body {
   .insight-card { padding: 0.85rem; }
   .insight-card i { font-size: 1.2rem; }
   .modal-dialog { margin: 0.75rem; }
+
+  /* Modal buttons: nunca expandir */
+  .modal-footer .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    max-width: none;
+  }
 }
 @media (max-width: 480px) {
   .auth-card { padding: 1.5rem; }
@@ -555,6 +656,34 @@ body {
   .motivation-banner { font-size: 0.78rem; padding: 0.7rem 1rem; }
   .content-card-body { padding: 0.75rem; }
   .btn { padding: 0.55rem 0.9rem; }
+}
+
+/* ===== LANDSCAPE: Botones compactos ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .modal-footer {
+    justify-content: flex-end !important;
+    gap: 0.5rem;
+  }
+  .modal-footer .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.82rem;
+  }
+  .modal-body {
+    padding: 0.75rem 1.5rem;
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+  .section-top .btn,
+  .section-top .d-flex .btn {
+    width: auto !important;
+    flex: 0 1 auto !important;
+  }
+  .section-top .d-flex {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+  }
 }
 
 

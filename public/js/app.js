@@ -370,6 +370,64 @@ function navigateToSection(section) {
   if (section === 'perfil') loadPerfil();
 }
 
+// ===== CUSTOM SELECT COMPONENT =====
+function buildCustomSelect(f) {
+  const firstOption = f.options.find(o => o.selected) || f.options[0];
+  const selectedValue = firstOption ? firstOption.value : '';
+  const selectedLabel = firstOption ? firstOption.label : 'Seleccionar...';
+  const optionsHtml = f.options.map(o => 
+    `<div class="custom-select-option${o.value == selectedValue ? ' selected' : ''}" data-value="${o.value}">${o.label}</div>`
+  ).join('');
+  return `<div class="custom-select-wrapper" data-name="${f.name}" data-required="${f.required ? 'true' : 'false'}">
+    <input type="hidden" name="${f.name}" value="${selectedValue}" ${f.required ? 'required' : ''}>
+    <div class="custom-select-trigger"><span class="custom-select-label">${selectedLabel}</span></div>
+    <div class="custom-select-options">${optionsHtml}</div>
+  </div>`;
+}
+
+function initCustomSelects(container) {
+  container.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const options = wrapper.querySelector('.custom-select-options');
+    const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+    const label = trigger.querySelector('.custom-select-label');
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close all other open selects
+      document.querySelectorAll('.custom-select-wrapper .custom-select-trigger.open').forEach(t => {
+        if (t !== trigger) {
+          t.classList.remove('open');
+          t.closest('.custom-select-wrapper').querySelector('.custom-select-options').classList.remove('show');
+        }
+      });
+      trigger.classList.toggle('open');
+      options.classList.toggle('show');
+    });
+
+    options.querySelectorAll('.custom-select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const value = opt.dataset.value;
+        const text = opt.textContent;
+        hiddenInput.value = value;
+        label.textContent = text;
+        options.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        trigger.classList.remove('open');
+        options.classList.remove('show');
+      });
+    });
+  });
+}
+
+// Close custom selects when clicking outside
+document.addEventListener('click', () => {
+  document.querySelectorAll('.custom-select-trigger.open').forEach(t => {
+    t.classList.remove('open');
+    t.closest('.custom-select-wrapper').querySelector('.custom-select-options').classList.remove('show');
+  });
+});
+
 // ===== MODAL =====
 function openModal(title, fields, onSubmit) {
   $('#modal-title').textContent = title;
@@ -400,7 +458,7 @@ function openModal(title, fields, onSubmit) {
         body.appendChild(wrapperDiv);
       }
       if (f.type === 'select') {
-        group.innerHTML = `<label class="form-label">${f.label}</label><select class="form-select" name="${f.name}" ${f.required ? 'required' : ''}>${f.options.map(o => `<option value="${o.value}" ${o.selected ? 'selected' : ''}>${o.label}</option>`).join('')}</select>`;
+        group.innerHTML = `<label class="form-label">${f.label}</label>` + buildCustomSelect(f);
       } else {
         group.innerHTML = `<label class="form-label">${f.label}</label><input type="${f.type || 'text'}" class="form-control" name="${f.name}" value="${f.value || ''}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.min ? `min="${f.min}"` : ''} placeholder="${f.placeholder || ''}">`;
       }
@@ -409,7 +467,7 @@ function openModal(title, fields, onSubmit) {
     }
 
     if (f.type === 'select') {
-      group.innerHTML = `<label class="form-label">${f.label}</label><select class="form-select" name="${f.name}" ${f.required ? 'required' : ''}>${f.options.map(o => `<option value="${o.value}" ${o.selected ? 'selected' : ''}>${o.label}</option>`).join('')}</select>`;
+      group.innerHTML = `<label class="form-label">${f.label}</label>` + buildCustomSelect(f);
     } else {
       group.innerHTML = `<label class="form-label">${f.label}</label><input type="${f.type || 'text'}" class="form-control" name="${f.name}" value="${f.value || ''}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.min ? `min="${f.min}"` : ''} placeholder="${f.placeholder || ''}">`;
     }
@@ -420,6 +478,7 @@ function openModal(title, fields, onSubmit) {
     bsModal = new bootstrap.Modal($('#appModal'));
   }
   bsModal.show();
+  initCustomSelects(body);
 
   $('#modal-form').onsubmit = (e) => {
     e.preventDefault();
