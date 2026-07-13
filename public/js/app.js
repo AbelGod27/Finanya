@@ -1251,17 +1251,40 @@ function renderCuentas() {
 }
 
 window.editarCuenta = (id, nombre, tipo, descripcion) => {
-  openModal('Editar Cuenta', [
-    { name: 'nombre', label: 'Nombre', required: true, value: nombre },
-    { name: 'descripcion', label: 'Descripción (opcional)', value: descripcion }
-  ], async (data) => {
+  const tipoLabels = { efectivo: 'Efectivo', banco: 'Banco', tarjeta: 'Tarjeta de débito', credito: 'Tarjeta de crédito', ahorro: 'Ahorro', otro: 'Otro' };
+
+  $('#modal-title').textContent = 'Editar Cuenta';
+  const body = $('#modal-body');
+  body.innerHTML = `
+    <div class="mb-3">
+      <label class="form-label">Nombre</label>
+      <input type="text" class="form-control" name="nombre" required value="${nombre}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Tipo</label>
+      <input type="text" class="form-control" value="${tipoLabels[tipo] || tipo}" disabled readonly>
+      <small class="text-muted">El tipo no se puede cambiar después de crear la cuenta.</small>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Descripción (opcional)</label>
+      <input type="text" class="form-control" name="descripcion" value="${descripcion || ''}">
+    </div>
+  `;
+
+  if (!bsModal) bsModal = new bootstrap.Modal($('#appModal'));
+  bsModal.show();
+
+  $('#modal-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData($('#modal-form'));
+    const data = Object.fromEntries(formData);
     try {
       await request(`/cuentas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
       closeModal();
       loadCuentas();
       showToast('Cuenta actualizada', 'success');
     } catch (err) { showToast(err.error || 'Error al editar', 'danger'); }
-  });
+  };
 };
 
 window.eliminarCuenta = async (id) => {
