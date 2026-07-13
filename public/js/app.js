@@ -526,7 +526,29 @@ const quotes = [
   "Cada peso ahorrado es un paso más hacia tu libertad financiera.",
   "Gastar menos de lo que ganas es el primer paso hacia la abundancia.",
   "Tus hábitos financieros de hoy definen tu tranquilidad de mañana.",
-  "Invertir en ti mismo es la mejor decisión financiera que puedes tomar."
+  "Invertir en ti mismo es la mejor decisión financiera que puedes tomar.",
+  "El dinero es un buen sirviente pero un mal amo.",
+  "No ahorres lo que queda después de gastar, gasta lo que queda después de ahorrar.",
+  "La independencia financiera es la capacidad de vivir de tus ahorros sin trabajar.",
+  "Cuida los centavos y los pesos se cuidarán solos.",
+  "El secreto de la riqueza es tener ingresos que trabajen para ti.",
+  "Una deuda es como una trampa: fácil de entrar, difícil de salir.",
+  "El que compra lo que no necesita, pronto venderá lo que necesita.",
+  "La planificación financiera no es solo para los ricos, es para los que quieren serlo.",
+  "Ahorrar no es privarse, es priorizarte.",
+  "Tu yo del futuro te agradecerá cada peso que ahorres hoy.",
+  "El gasto innecesario de hoy es la oportunidad perdida de mañana.",
+  "La libertad financiera comienza con un simple paso: controlar tus gastos.",
+  "No trabajes por dinero, haz que el dinero trabaje por ti.",
+  "Un fondo de emergencia no es un lujo, es una necesidad.",
+  "La disciplina financiera es el puente entre tus metas y tus logros.",
+  "Pequeños ahorros constantes generan grandes resultados con el tiempo.",
+  "El mejor momento para invertir fue hace 10 años. El segundo mejor es hoy.",
+  "Vive por debajo de tus posibilidades e invierte la diferencia.",
+  "La paciencia es la mejor aliada del ahorro.",
+  "No necesitas ganar más, necesitas administrar mejor lo que ya tienes.",
+  "Cada decisión financiera que tomas hoy moldea tu futuro.",
+  "La educación financiera es la inversión con mayor retorno."
 ];
 
 function loadMotivation() {
