@@ -2014,12 +2014,13 @@ async function markMessagesRead() {
 function checkAdmin() {
   if (currentUser && currentUser.rol === 'admin') {
     $('#btn-admin-panel').classList.remove('d-none');
+    $('#btn-admin-panel-mobile').classList.remove('d-none');
   }
 }
 
 let adminRefreshInterval = null;
 
-$('#btn-admin-panel').addEventListener('click', () => {
+function openAdminPanel() {
   document.querySelector('.app-main').classList.add('d-none');
   $('#admin-panel').classList.remove('d-none');
   loadAdminDashboard();
@@ -2032,7 +2033,10 @@ $('#btn-admin-panel').addEventListener('click', () => {
     loadAdminDashboard();
     loadAdminUsuarios();
   }, 10000);
-});
+}
+
+$('#btn-admin-panel').addEventListener('click', openAdminPanel);
+$('#btn-admin-panel-mobile').addEventListener('click', openAdminPanel);
 
 $('#btn-volver-app').addEventListener('click', () => {
   $('#admin-panel').classList.add('d-none');
