@@ -1132,55 +1132,69 @@ window.editGasto = (id, descripcion, monto, fecha, metodo_pago) => {
 let cuentas = [];
 
 $('#btn-nueva-cuenta').addEventListener('click', () => {
-  openModal('Nueva Cuenta', [
-    { name: 'nombre', label: 'Nombre', required: true, placeholder: 'Ej: Banco Principal' },
-    { name: 'tipo', label: 'Tipo', type: 'select', required: true, options: [
-      { value: 'efectivo', label: 'Efectivo', selected: true },
-      { value: 'banco', label: 'Banco' },
-      { value: 'tarjeta', label: 'Tarjeta de débito' },
-      { value: 'credito', label: 'Tarjeta de crédito' },
-      { value: 'ahorro', label: 'Ahorro' },
-      { value: 'otro', label: 'Otro' }
-    ]},
-    { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Cuenta de nómina' }
-  ], async (data) => {
-    try {
-      // Recoger campos de crédito si existen
-      const limInput = document.querySelector('#modal-body input[name="limite_credito"]');
-      const corteInput = document.querySelector('#modal-body input[name="fecha_corte"]');
-      const pagoInput = document.querySelector('#modal-body input[name="fecha_pago"]');
-      if (limInput && limInput.value) data.limite_credito = limInput.value;
-      if (corteInput && corteInput.value) data.fecha_corte = corteInput.value;
-      if (pagoInput && pagoInput.value) data.fecha_pago = pagoInput.value;
+  // Crear modal manualmente para control total
+  $('#modal-title').textContent = 'Nueva Cuenta';
+  const body = $('#modal-body');
+  body.innerHTML = `
+    <div class="mb-3">
+      <label class="form-label">Nombre</label>
+      <input type="text" class="form-control" name="nombre" required placeholder="Ej: Banco Principal">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" name="tipo" id="cuenta-tipo-select" required>
+        <option value="efectivo">Efectivo</option>
+        <option value="banco">Banco</option>
+        <option value="tarjeta">Tarjeta de débito</option>
+        <option value="credito">Tarjeta de crédito</option>
+        <option value="ahorro">Ahorro</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div id="campos-credito" style="display:none;">
+      <div class="mb-3">
+        <label class="form-label">Límite de crédito</label>
+        <input type="number" class="form-control" name="limite_credito" step="0.01" min="1" placeholder="Ej: 10000">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Día de corte (1-31)</label>
+        <input type="number" class="form-control" name="fecha_corte" min="1" max="31" placeholder="Ej: 15">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Día de pago (1-31)</label>
+        <input type="number" class="form-control" name="fecha_pago" min="1" max="31" placeholder="Ej: 5">
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Descripción (opcional)</label>
+      <input type="text" class="form-control" name="descripcion" placeholder="Ej: Cuenta de nómina">
+    </div>
+  `;
 
+  // Toggle campos de crédito
+  const tipoSelect = body.querySelector('#cuenta-tipo-select');
+  const camposCredito = body.querySelector('#campos-credito');
+  tipoSelect.addEventListener('change', () => {
+    camposCredito.style.display = tipoSelect.value === 'credito' ? 'block' : 'none';
+  });
+
+  if (!bsModal) bsModal = new bootstrap.Modal($('#appModal'));
+  bsModal.show();
+
+  $('#modal-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData($('#modal-form'));
+    const data = Object.fromEntries(formData);
+    try {
+      if (!data.limite_credito) delete data.limite_credito;
+      if (!data.fecha_corte) delete data.fecha_corte;
+      if (!data.fecha_pago) delete data.fecha_pago;
       await request('/cuentas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadCuentas();
       showToast('Cuenta creada', 'success');
     } catch (err) { showToast(err.error || 'Error al crear cuenta', 'danger'); }
-  });
-
-  // Agregar campos condicionales de crédito
-  $('#appModal').addEventListener('shown.bs.modal', function handler() {
-    $('#appModal').removeEventListener('shown.bs.modal', handler);
-    const body = $('#modal-body');
-    const tipoSelect = body.querySelector('select[name="tipo"]');
-    if (!tipoSelect) return;
-
-    const creditoDiv = document.createElement('div');
-    creditoDiv.id = 'credito-fields';
-    creditoDiv.style.display = 'none';
-    creditoDiv.innerHTML = `
-      <div class="mb-3"><label class="form-label">Límite de crédito</label><input type="number" class="form-control" name="limite_credito" step="0.01" min="0" placeholder="Ej: 10000"></div>
-      <div class="mb-3"><label class="form-label">Día de corte (1-31)</label><input type="number" class="form-control" name="fecha_corte" min="1" max="31" placeholder="Ej: 15"></div>
-      <div class="mb-3"><label class="form-label">Día de pago (1-31)</label><input type="number" class="form-control" name="fecha_pago" min="1" max="31" placeholder="Ej: 5"></div>
-    `;
-    tipoSelect.closest('.mb-3').after(creditoDiv);
-
-    tipoSelect.addEventListener('change', () => {
-      creditoDiv.style.display = tipoSelect.value === 'credito' ? 'block' : 'none';
-    });
-  });
+  };
 });
 
 async function loadCuentas() {
