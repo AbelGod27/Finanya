@@ -85,7 +85,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const id_meta = req.params.id;
-    const { nombre, monto_objetivo, monto_actual, fecha_limite } = req.body;
+    const { nombre, monto_objetivo, fecha_limite } = req.body;
 
     const resultado = await pool.query(
       'SELECT * FROM metas_ahorro WHERE id_meta = $1',
@@ -100,24 +100,20 @@ router.put('/:id', async (req, res) => {
     if (nombre !== undefined && (nombre.length === 0 || nombre.length > 100)) {
       return res.status(400).json({ error: 'El nombre debe tener entre 1 y 100 caracteres' });
     }
-    if (monto_objetivo !== undefined && (isNaN(monto_objetivo) || monto_objetivo <= 0 || monto_objetivo > 999999999.99)) {
+    if (monto_objetivo !== undefined && monto_objetivo !== '' && (isNaN(monto_objetivo) || monto_objetivo <= 0 || monto_objetivo > 999999999.99)) {
       return res.status(400).json({ error: 'El monto objetivo debe ser entre 0.01 y 999,999,999.99' });
     }
-    if (monto_actual !== undefined && (isNaN(monto_actual) || Number(monto_actual) < 0)) {
-      return res.status(400).json({ error: 'El monto actual no puede ser negativo' });
-    }
-    if (fecha_limite !== undefined && new Date(fecha_limite) <= new Date(meta.fecha_inicio)) {
+    if (fecha_limite !== undefined && fecha_limite && meta.fecha_inicio && new Date(fecha_limite) <= new Date(meta.fecha_inicio)) {
       return res.status(400).json({ error: 'La fecha límite debe ser posterior a la fecha de inicio' });
     }
 
     const nuevoNombre = nombre || meta.nombre;
-    const nuevoMontoObj = monto_objetivo || meta.monto_objetivo;
-    const nuevoMontoActual = monto_actual !== undefined ? Number(monto_actual) : meta.monto_actual;
+    const nuevoMontoObj = monto_objetivo ? Number(monto_objetivo) : meta.monto_objetivo;
     const nuevaFecha = fecha_limite || meta.fecha_limite;
 
     await pool.query(
-      'UPDATE metas_ahorro SET nombre = $1, monto_objetivo = $2, monto_actual = $3, fecha_limite = $4 WHERE id_meta = $5',
-      [nuevoNombre, nuevoMontoObj, nuevoMontoActual, nuevaFecha, id_meta]
+      'UPDATE metas_ahorro SET nombre = $1, monto_objetivo = $2, fecha_limite = $3 WHERE id_meta = $4',
+      [nuevoNombre, nuevoMontoObj, nuevaFecha, id_meta]
     );
 
     res.json({ mensaje: 'Meta actualizada' });

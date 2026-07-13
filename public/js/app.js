@@ -1397,10 +1397,10 @@ window.aportarMeta = async (id) => {
 window.editarMeta = (id, nombre, montoObjetivo, montoActual) => {
   openModal('Editar Meta de Ahorro', [
     { name: 'nombre', label: 'Nombre', required: true, value: nombre },
-    { name: 'monto_objetivo', label: 'Monto objetivo', type: 'number', required: true, step: '0.01', min: '0.01', value: montoObjetivo },
-    { name: 'monto_actual', label: 'Monto ahorrado actualmente', type: 'number', required: true, step: '0.01', min: '0', value: montoActual }
+    { name: 'monto_objetivo', label: 'Monto objetivo', type: 'number', step: '0.01', min: '0.01', value: montoObjetivo || '' }
   ], async (data) => {
     try {
+      if (!data.monto_objetivo) delete data.monto_objetivo;
       await request(`/metas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
       closeModal();
       loadMetas();
