@@ -1142,7 +1142,6 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
       { value: 'ahorro', label: 'Ahorro' },
       { value: 'otro', label: 'Otro' }
     ]},
-    { name: '_separator', label: '<a href="#" class="small text-primary" onclick="document.getElementById(\'cuenta-credito-opts\').classList.toggle(\'d-none\'); return false;"><i class="bi bi-credit-card me-1"></i>Opciones de tarjeta de crédito</a>', type: 'html' },
     { name: 'limite_credito', label: 'Límite de crédito', type: 'number', step: '0.01', min: '0', placeholder: 'Ej: 10000', wrapper: 'cuenta-credito-opts', hidden: true },
     { name: 'fecha_corte', label: 'Día de corte (1-31)', type: 'number', min: '1', placeholder: 'Ej: 15', wrapper: 'cuenta-credito-opts', hidden: true },
     { name: 'fecha_pago', label: 'Día de pago (1-31)', type: 'number', min: '1', placeholder: 'Ej: 5', wrapper: 'cuenta-credito-opts', hidden: true },
@@ -1152,13 +1151,25 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
       if (!data.limite_credito) delete data.limite_credito;
       if (!data.fecha_corte) delete data.fecha_corte;
       if (!data.fecha_pago) delete data.fecha_pago;
-      delete data._separator;
       await request('/cuentas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadCuentas();
       showToast('Cuenta creada', 'success');
     } catch (err) { showToast(err.error || 'Error al crear cuenta', 'danger'); }
   });
+
+  // Mostrar/ocultar opciones de crédito según tipo seleccionado
+  setTimeout(() => {
+    const tipoSelect = document.querySelector('#modal-body select[name="tipo"]');
+    const creditoOpts = document.getElementById('cuenta-credito-opts');
+    if (tipoSelect && creditoOpts) {
+      const toggleCredito = () => {
+        creditoOpts.classList.toggle('d-none', tipoSelect.value !== 'credito');
+      };
+      tipoSelect.addEventListener('change', toggleCredito);
+      toggleCredito();
+    }
+  }, 100);
 });
 
 async function loadCuentas() {
