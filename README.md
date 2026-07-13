@@ -1,6 +1,6 @@
 # Finanya - Gestion Financiera Personal
 
-Aplicacion web completa para gestionar ingresos, gastos, ahorros, presupuestos, cuentas financieras y transferencias. Incluye panel de administracion, analisis financiero, calendario interactivo, graficas, onboarding guiado y modo oscuro.
+Aplicacion web completa para gestionar ingresos, gastos, ahorros, presupuestos, cuentas financieras, transferencias y tarjetas de credito. Incluye analisis financiero inteligente, panel de administracion, calendario interactivo, sistema de notificaciones, onboarding guiado y recuperacion de contrasena por correo.
 
 URL de produccion: https://finanya.onrender.com
 
@@ -16,7 +16,8 @@ URL de produccion: https://finanya.onrender.com
 - Backend: Node.js + Express
 - Base de datos: PostgreSQL (Render)
 - Autenticacion: JWT + bcrypt
-- Subida de archivos: Multer (almacenamiento en BD como Base64)
+- Correo: Nodemailer + Gmail SMTP
+- Subida de archivos: Multer (Base64 en BD)
 - Hosting: Render
 
 ---
@@ -25,118 +26,143 @@ URL de produccion: https://finanya.onrender.com
 
 ### Usuarios
 - Registro con validacion completa
-- Inicio de sesion con JWT (24h de expiracion)
+- Inicio de sesion con JWT (30 dias)
+- Recuperacion de contrasena por correo electronico
 - Edicion de perfil (nombre y contrasena)
-- Foto de perfil (almacenada como Base64 en la BD, persiste en Render)
+- Foto de perfil (hasta 10MB, almacenada como Base64)
 - Roles: usuario y administrador
-- Categorias por defecto al registrarse (13 categorias)
-- Onboarding guiado para nuevos usuarios (7 pasos)
+- Categorias y cuentas por defecto al registrarse
+- Onboarding guiado de 7 pasos para nuevos usuarios
 
 ### Ingresos
 - Crear, editar, eliminar ingresos
-- Asociar a categoria de tipo ingreso
-- Asociar a cuenta financiera (opcional, actualiza saldo)
-- Listar con orden por fecha
+- Asociar a categoria y cuenta (obligatorio)
+- Descripcion opcional
+- Ordenamiento por columnas (fecha, categoria, monto) con flechas
+- Actualiza saldo de cuenta automaticamente
 
 ### Gastos
 - Crear, editar, eliminar gastos
 - Metodo de pago seleccionable (Efectivo, Tarjeta de debito, Tarjeta de credito, Transferencia, Pago movil)
-- Asociar a categoria de tipo gasto
-- Asociar a cuenta financiera (opcional, actualiza saldo)
+- Asociar a categoria y cuenta (obligatorio)
+- Validacion de saldo suficiente (o credito disponible para tarjetas de credito)
+- Ordenamiento por columnas con flechas
+- Descripcion opcional
 
 ### Categorias
 - Crear, editar, eliminar categorias
 - Tipos: ingreso o gasto
 - Filtro por tipo en la interfaz
 - Proteccion contra eliminacion si tiene registros asociados
+- 13 categorias por defecto al registrarse
 
 ### Cuentas Financieras
-- Crear cuentas (efectivo, banco, tarjeta, ahorro, otro)
-- Saldo inicial configurable
-- Saldo actual se actualiza automaticamente con ingresos, gastos y transferencias
-- Editar y eliminar cuentas
-- Vista de saldo total
+- Tipos: efectivo, banco, tarjeta de debito, tarjeta de credito, ahorro, otro
+- Todas empiezan con saldo $0 (dinero entra via ingresos)
+- Saldo se actualiza automaticamente con ingresos, gastos y transferencias
+- El tipo no se puede cambiar despues de crear la cuenta
 
-### Transferencias entre Cuentas
-- Mover dinero entre cuentas del mismo usuario
-- No se registra como ingreso ni gasto
-- Validacion de saldo suficiente en cuenta origen
-- No permite transferir a la misma cuenta
-- Eliminar transferencia revierte los saldos automaticamente
+### Tarjeta de Credito
+- Limite de credito configurable
+- Dia de corte y dia de pago opcionales
+- Credito disponible = limite - deuda
+- No permite gastar si no hay credito disponible
+- Deuda visible en la tabla de cuentas
+- No se puede cambiar el tipo si tiene deuda pendiente
+- Pago de tarjeta desde otra cuenta via transferencias
+
+### Transferencias
+- Entre cuentas (mover dinero sin registro de ingreso/gasto)
+- Cuenta a Meta (aportar ahorro desde cuenta)
+- Meta a Cuenta (retirar ahorro)
+- Meta a Meta (redistribuir entre metas)
+- Validacion de saldo suficiente en origen
+- Eliminar transferencia revierte saldos
 
 ### Metas de Ahorro
-- Crear metas con nombre, monto objetivo y fechas
-- Registrar aportes hacia cada meta
-- Editar nombre, monto objetivo y monto ahorrado
-- Barra de progreso visual con porcentaje
-- Los aportes se restan del balance disponible
+- Nombre obligatorio, monto objetivo y fechas opcionales
+- Registrar aportes (obligatoriamente desde una cuenta)
+- Barra de progreso visual
+- Editar nombre y monto objetivo (no se puede editar monto ahorrado directamente)
+- Eliminar meta devuelve el dinero a una cuenta seleccionada
 
 ### Presupuestos Mensuales
-- Crear presupuesto por categoria de gasto
-- Definir limite mensual
+- Crear por categoria de gasto con limite mensual
 - Calculo automatico del gasto actual
-- Porcentaje consumido con barra de progreso
-- Alerta visual al 80% (amarillo) y al 100% (rojo)
-- Resumen de presupuestos en el dashboard
+- Barra de progreso con porcentaje
+- Alerta al 80% (amarillo) y 100% (rojo)
+- Indicador informativo cuando no hay gastos en la categoria
 
 ### Dashboard
-- Balance del mes (ingresos - gastos - ahorro)
-- Total de ingresos, gastos y ahorrado
-- Categoria con mayor gasto
-- Promedio mensual de gastos
-- Tasa de ahorro
+- Balance, ingresos, gastos y ahorrado del mes
 - Grafica de dona: gastos por categoria
 - Grafica de barras: ingresos por mes (6 meses)
-- Presupuestos del mes con barras de progreso
-- Ultimos 8 movimientos
-- Frases motivacionales financieras
+- Ultimos 5 ingresos y gastos separados
 - Tarjetas clickeables que navegan a cada seccion
+- Frases motivacionales financieras (30 frases)
 
-### Analisis Financiero
-- Comparacion contra el mes anterior (tabla)
-- Variacion porcentual de ingresos y gastos
-- Categoria con mayor crecimiento de gasto
-- Promedio mensual de ingresos y gastos
-- Prediccion de ahorro anual
-- Resumen automatico con frases descriptivas
-- Detalle por categoria con variaciones
+### Analisis Financiero Inteligente
+- Indicador de Salud Financiera (0-100) con grafico circular
+- Tasa de ahorro vs regla del 20%
+- Tendencia de gastos de 3 meses consecutivos
+- Deteccion de gastos atipicos (outliers por desviacion estandar)
+- Estabilidad de ingresos (coeficiente de variacion)
+- Concentracion/diversificacion de gastos
+- Patron de gasto semanal (dia de mayor gasto)
+- Frecuencia de gasto (deteccion de compras impulsivas)
+- Gasto promedio por transaccion
+- Ratio deuda/patrimonio
+- Progreso de metas activas
+- Recomendaciones personalizadas
+- Tabla comparativa mes actual vs anterior con variaciones
+- Detalle por categoria con % del total
 
 ### Calendario Financiero
-- Calendario mensual interactivo
+- Vista mensual interactiva con navegacion
 - Indicadores por dia (verde=ingresos, rojo=gastos, azul=transferencias)
-- Navegacion entre meses
 - Dia actual resaltado
-- Clic en un dia muestra detalle con lista de movimientos y balance
-- Totales del mes visibles
+- Detalle al hacer clic en un dia (lista de movimientos + balance)
+- Totales del mes (apilados verticalmente en movil)
 
 ### Panel de Administracion
-- Acceso exclusivo para usuarios con rol admin
+- Acceso exclusivo para rol admin (boton visible en movil y escritorio)
 - Dashboard: total usuarios, activos, ingresos, gastos, metas
-- Usuarios mas activos
-- Actividad reciente (log de acciones)
+- Usuarios mas activos y actividad reciente
 - Gestion de usuarios: listar, buscar, activar/desactivar, cambiar rol, eliminar
-- Registro de actividad del sistema
+- Sistema de notificaciones: admin envia mensajes a usuarios
+
+### Notificaciones (Admin a Usuario)
+- Boton flotante arrastrable (campana) con badge de no leidos
+- Panel desplegable con burbujas de mensajes
+- Solo lectura para el usuario (unidireccional)
+- Admin puede enviar desde el panel de administracion
+- Polling cada 5 segundos para mensajes nuevos
+- Se marcan como leidos al abrir
+
+### Recuperacion de Contrasena
+- Formulario "Olvidaste tu contrasena"
+- Envio de correo con enlace de restablecimiento (Nodemailer + Gmail)
+- Token seguro con expiracion de 30 minutos
+- Solo puede usarse una vez
+- No revela si el correo existe o no
+- Aviso de que el correo puede llegar a spam
 
 ### Interfaz y UX
 - Paleta azul cielo (#38BDF8)
-- Diseno moderno tipo fintech
-- Bordes redondeados (12-16px)
-- Sombras suaves progresivas
+- Diseno tipo fintech profesional
+- Bordes redondeados, sombras suaves
 - Tipografia Montserrat
-- Animaciones suaves al hover
-- Diseno responsive (movil, tablet, escritorio)
-- Soporte completo para orientacion landscape en moviles
-- Modo oscuro / claro con toggle
-- Landing page con hero animado, features y footer
+- Animaciones hover suaves
+- Responsive completo (movil, tablet, escritorio)
+- Modo oscuro/claro con toggle
+- Landing page con hero animado
 - Toasts de exito/error/advertencia
-- Modal de confirmacion antes de eliminar
-- Custom select dropdown (reemplaza el select nativo para consistencia visual en Android/iOS)
-- Botones con ancho controlado que no se expanden en landscape
-- Ayuda contextual con iconos "?" y tooltips
-- Onboarding guiado de 7 pasos
-- Avatar con inicial o foto
+- Confirmaciones modales personalizadas (Confirmar/Eliminar)
+- Ayuda contextual con tooltips (iconos ?)
+- Onboarding de 7 pasos
 - Boton de mostrar/ocultar contrasena
 - Scrollbar personalizado
+- Ordenamiento de tablas con flechas clickeables
 
 ---
 
@@ -145,33 +171,35 @@ URL de produccion: https://finanya.onrender.com
 ```
 Finanya-1/
 ├── database/
-│   ├── schema.sql              # Esquema completo de la base de datos
+│   ├── schema.sql              # Esquema completo
 │   └── migrate.js              # Script unico de migracion
 ├── public/
-│   ├── css/styles.css          # Estilos personalizados (fintech theme)
-│   ├── js/app.js               # Logica completa del frontend
+│   ├── css/styles.css          # Estilos fintech
+│   ├── js/app.js               # Logica principal
+│   ├── js/analisis.js          # Motor de analisis inteligente
 │   └── index.html              # Pagina principal (SPA)
 ├── src/
-│   ├── config/
-│   │   └── db.js               # Conexion a PostgreSQL
+│   ├── config/db.js            # Conexion PostgreSQL
 │   ├── middlewares/
-│   │   ├── autenticacionMiddleware.js  # Verificacion JWT
-│   │   ├── autorizacionMiddleware.js   # Verificacion rol admin (403)
-│   │   ├── validacionMiddleware.js     # Validacion de datos
-│   │   ├── erroresMiddleware.js        # Manejo global de errores
-│   │   └── registroMiddleware.js       # Logging de peticiones
+│   │   ├── autenticacionMiddleware.js
+│   │   ├── autorizacionMiddleware.js
+│   │   ├── validacionMiddleware.js
+│   │   ├── erroresMiddleware.js
+│   │   └── registroMiddleware.js
 │   ├── routes/
 │   │   ├── auth.js             # Registro, login, perfil, avatar
-│   │   ├── categorias.js       # CRUD categorias
-│   │   ├── ingresos.js         # CRUD ingresos + actualizacion de saldo
-│   │   ├── gastos.js           # CRUD gastos + actualizacion de saldo
-│   │   ├── cuentas.js          # CRUD cuentas financieras
-│   │   ├── transferencias.js   # Transferencias entre cuentas
-│   │   ├── metas.js            # CRUD metas y aportes
-│   │   ├── presupuestos.js     # CRUD presupuestos con alertas
+│   │   ├── recuperacion.js     # Recuperacion de contrasena
+│   │   ├── categorias.js
+│   │   ├── ingresos.js
+│   │   ├── gastos.js
+│   │   ├── cuentas.js          # CRUD + pago de tarjeta
+│   │   ├── transferencias.js   # Entre cuentas y metas
+│   │   ├── metas.js            # CRUD + aportes
+│   │   ├── presupuestos.js
+│   │   ├── mensajes.js         # Notificaciones admin-usuario
 │   │   └── admin.js            # Panel administrativo
-│   └── server.js               # Servidor Express con middlewares
-├── .env                        # Variables de entorno (no se sube)
+│   └── server.js
+├── .env
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -181,129 +209,62 @@ Finanya-1/
 
 ## Instalacion
 
-1. Clonar el repositorio:
 ```bash
 git clone https://github.com/AbelGod27/Finanya.git
 cd Finanya-1
-```
-
-2. Instalar dependencias:
-```bash
 npm install
 ```
 
-3. Crear archivo `.env` en la raiz:
+Crear archivo `.env`:
 ```
-DATABASE_URL=postgresql://usuario:password@host:5432/nombre_db
-JWT_SECRET=tu_clave_secreta_aqui
-JWT_EXPIRES_IN=24h
+DATABASE_URL=postgresql://usuario:password@host:5432/db
+JWT_SECRET=tu_clave_secreta
+JWT_EXPIRES_IN=30d
 PORT=3000
+EMAIL_USER=tu@gmail.com
+EMAIL_PASS=tu_app_password_de_google
+APP_URL=https://finanya.onrender.com
 ```
 
-4. Ejecutar la migracion:
+Ejecutar migracion y arrancar:
 ```bash
 node database/migrate.js
-```
-
-5. Iniciar el servidor:
-```bash
 npm start
 ```
-
-6. Abrir en el navegador: http://localhost:3000
-
----
-
-## Variables de entorno
-
-| Variable | Descripcion | Ejemplo |
-|----------|-------------|---------|
-| DATABASE_URL | URL de conexion a PostgreSQL | postgresql://user:pass@host/db |
-| JWT_SECRET | Clave secreta para firmar tokens | mi_clave_secreta_2024 |
-| JWT_EXPIRES_IN | Tiempo de expiracion del token | 24h |
-| PORT | Puerto del servidor (opcional) | 3000 |
-
----
-
-## API Endpoints
-
-### Publicos
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| POST | /api/auth/registro | Registrar usuario |
-| POST | /api/auth/login | Iniciar sesion (devuelve JWT) |
-| GET | /api/health | Health check |
-
-### Protegidos (JWT)
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | /api/auth/perfil/:id | Obtener perfil |
-| PUT | /api/auth/perfil/:id | Editar perfil |
-| POST | /api/auth/perfil/:id/avatar | Subir foto de perfil |
-| GET/POST/PUT/DELETE | /api/categorias/* | CRUD categorias |
-| GET/POST/PUT/DELETE | /api/ingresos/* | CRUD ingresos |
-| GET/POST/PUT/DELETE | /api/gastos/* | CRUD gastos |
-| GET/POST/PUT/DELETE | /api/cuentas/* | CRUD cuentas |
-| GET/POST/DELETE | /api/transferencias/* | Transferencias |
-| GET/POST/PUT/DELETE | /api/metas/* | CRUD metas y aportes |
-| GET/POST/PUT/DELETE | /api/presupuestos/* | CRUD presupuestos |
-
-### Administrativos (JWT + admin)
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | /api/admin/dashboard | Estadisticas del sistema |
-| GET | /api/admin/usuarios | Listar usuarios |
-| PUT | /api/admin/usuarios/:id | Editar usuario |
-| PATCH | /api/admin/usuarios/:id/estado | Activar/desactivar |
-| PATCH | /api/admin/usuarios/:id/rol | Cambiar rol |
-| DELETE | /api/admin/usuarios/:id | Eliminar usuario |
-| GET | /api/admin/actividad | Registro de actividad |
-
----
-
-## Middlewares
-
-| Archivo | Funcion |
-|---------|---------|
-| autenticacionMiddleware.js | Verifica JWT del header Authorization Bearer |
-| autorizacionMiddleware.js | Verifica rol admin, retorna 403 si no |
-| validacionMiddleware.js | Valida datos de registro, ingresos, gastos y metas |
-| erroresMiddleware.js | Captura excepciones, responde JSON estandarizado |
-| registroMiddleware.js | Log en consola de cada peticion (metodo, ruta, tiempo) |
 
 ---
 
 ## Deploy en Render
 
-1. Crear base de datos PostgreSQL en Render
-2. Crear Web Service conectado al repositorio
-3. Configurar:
-   - Build Command: `npm install`
-   - Start Command: `npm start`
-   - Variables: DATABASE_URL (URL interna), JWT_SECRET, JWT_EXPIRES_IN
-4. Ejecutar migracion desde consola de Render o con URL externa
-
----
-
-## Acceso como administrador
-
-El primer usuario se configura como admin al ejecutar la migracion. Al iniciar sesion aparece el boton "Admin" en la barra de navegacion para acceder al panel de gestion.
+- Build: `npm install`
+- Start: `npm start`
+- Variables: DATABASE_URL (interna), JWT_SECRET, JWT_EXPIRES_IN, EMAIL_USER, EMAIL_PASS, APP_URL
 
 ---
 
 ## Seguridad
 
-- Contrasenas cifradas con bcrypt (10 salt rounds)
-- JWT con expiracion configurable
-- Consultas parametrizadas (prevencion SQL injection)
-- Validacion de datos en servidor y cliente
+- Contrasenas cifradas con bcrypt
+- JWT con expiracion de 30 dias
+- Consultas parametrizadas (SQL injection)
+- Validacion en cliente y servidor
 - Middleware de autorizacion por rol
+- Rate limiting en login/registro (10 intentos / 15 min)
+- Rutas de perfil protegidas con JWT
+- Usuario desactivado no puede iniciar sesion
 - Variables de entorno para credenciales
-- Fotos de perfil como Base64 en BD (sin archivos en disco)
-- Imagenes excluidas del repositorio via .gitignore
+- Imagenes como Base64 en BD (sin archivos en disco)
+
+---
+
+## App Android
+
+Disponible en repositorio separado: https://github.com/AbelGod27/Finanya-android
+
+WebView nativo que carga la app web con soporte para subida de archivos, sesion persistente y navegacion nativa.
 
 ---
 
 ## Autor
 
-Abel Pineda
+Proyecto desarrollado como aplicacion de gestion financiera personal para portafolio profesional.
