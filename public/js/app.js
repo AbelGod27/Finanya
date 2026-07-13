@@ -1142,15 +1142,17 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
       { value: 'ahorro', label: 'Ahorro' },
       { value: 'otro', label: 'Otro' }
     ]},
-    { name: 'limite_credito', label: 'Límite de crédito', type: 'number', step: '0.01', min: '0', placeholder: 'Ej: 10000', wrapper: 'cuenta-credito-opts', hidden: true },
-    { name: 'fecha_corte', label: 'Día de corte (1-31)', type: 'number', min: '1', placeholder: 'Ej: 15', wrapper: 'cuenta-credito-opts', hidden: true },
-    { name: 'fecha_pago', label: 'Día de pago (1-31)', type: 'number', min: '1', placeholder: 'Ej: 5', wrapper: 'cuenta-credito-opts', hidden: true },
     { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Cuenta de nómina' }
   ], async (data) => {
     try {
-      if (!data.limite_credito) delete data.limite_credito;
-      if (!data.fecha_corte) delete data.fecha_corte;
-      if (!data.fecha_pago) delete data.fecha_pago;
+      // Recoger campos de crédito si existen
+      const limInput = document.querySelector('#modal-body input[name="limite_credito"]');
+      const corteInput = document.querySelector('#modal-body input[name="fecha_corte"]');
+      const pagoInput = document.querySelector('#modal-body input[name="fecha_pago"]');
+      if (limInput && limInput.value) data.limite_credito = limInput.value;
+      if (corteInput && corteInput.value) data.fecha_corte = corteInput.value;
+      if (pagoInput && pagoInput.value) data.fecha_pago = pagoInput.value;
+
       await request('/cuentas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadCuentas();
@@ -1158,18 +1160,30 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
     } catch (err) { showToast(err.error || 'Error al crear cuenta', 'danger'); }
   });
 
-  // Mostrar/ocultar opciones de crédito según tipo seleccionado
+  // Agregar campos condicionales de crédito
   setTimeout(() => {
-    const tipoSelect = document.querySelector('#modal-body select[name="tipo"]');
-    const creditoOpts = document.getElementById('cuenta-credito-opts');
-    if (tipoSelect && creditoOpts) {
-      const toggleCredito = () => {
-        creditoOpts.classList.toggle('d-none', tipoSelect.value !== 'credito');
-      };
-      tipoSelect.addEventListener('change', toggleCredito);
-      toggleCredito();
-    }
-  }, 100);
+    const body = $('#modal-body');
+    const tipoSelect = body.querySelector('select[name="tipo"]');
+    if (!tipoSelect) return;
+
+    // Crear contenedor de opciones de crédito
+    const creditoDiv = document.createElement('div');
+    creditoDiv.id = 'credito-fields';
+    creditoDiv.className = 'd-none';
+    creditoDiv.innerHTML = `
+      <div class="mb-3"><label class="form-label">Límite de crédito</label><input type="number" class="form-control" name="limite_credito" step="0.01" min="0" placeholder="Ej: 10000"></div>
+      <div class="mb-3"><label class="form-label">Día de corte (1-31)</label><input type="number" class="form-control" name="fecha_corte" min="1" max="31" placeholder="Ej: 15"></div>
+      <div class="mb-3"><label class="form-label">Día de pago (1-31)</label><input type="number" class="form-control" name="fecha_pago" min="1" max="31" placeholder="Ej: 5"></div>
+    `;
+
+    // Insertar después del select de tipo
+    tipoSelect.closest('.mb-3').after(creditoDiv);
+
+    // Toggle al cambiar tipo
+    tipoSelect.addEventListener('change', () => {
+      creditoDiv.classList.toggle('d-none', tipoSelect.value !== 'credito');
+    });
+  }, 50);
 });
 
 async function loadCuentas() {
