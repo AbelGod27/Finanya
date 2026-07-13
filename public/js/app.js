@@ -1924,8 +1924,8 @@ $('#avatar-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  if (file.size > 2 * 1024 * 1024) {
-    showToast('La imagen no debe superar 2MB', 'warning');
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('La imagen no debe superar 10MB', 'warning');
     return;
   }
 

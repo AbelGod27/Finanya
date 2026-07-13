@@ -11,7 +11,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
 // Multer en memoria (para guardar como Base64 en BD)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowed.includes(file.mimetype)) cb(null, true);
