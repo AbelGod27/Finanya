@@ -926,7 +926,26 @@ $('#btn-nuevo-ingreso').addEventListener('click', async () => {
 
 async function loadIngresos() {
   try {
-    const ingresos = await request(`/ingresos/usuario/${currentUser.id_usuario}`);
+    // Poblar filtro de categorías
+    const selectCat = $('#filtro-ingreso-cat');
+    const currentVal = selectCat.value;
+    selectCat.innerHTML = '<option value="">Todas</option>';
+    categorias.filter(c => c.tipo === 'ingreso').forEach(c => {
+      selectCat.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`;
+    });
+    selectCat.value = currentVal;
+
+    // Construir URL con filtros
+    let url = `/ingresos/usuario/${currentUser.id_usuario}`;
+    const params = new URLSearchParams();
+    const cat = $('#filtro-ingreso-cat').value;
+    const desde = $('#filtro-ingreso-desde').value;
+    const hasta = $('#filtro-ingreso-hasta').value;
+    if (cat) params.set('id_categoria', cat);
+    if (desde && hasta) { params.set('fecha_inicio', desde); params.set('fecha_fin', hasta); }
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const ingresos = await request(url);
     const container = $('#lista-ingresos');
     if (ingresos.length === 0) {
       container.innerHTML = '<p class="text-muted text-center fst-italic">No hay ingresos registrados</p>';
@@ -949,6 +968,17 @@ async function loadIngresos() {
     </table></div>`;
   } catch (err) { console.error('Error cargando ingresos:', err); }
 }
+
+// Filtros de ingresos
+$('#filtro-ingreso-cat').addEventListener('change', () => loadIngresos());
+$('#filtro-ingreso-desde').addEventListener('change', () => loadIngresos());
+$('#filtro-ingreso-hasta').addEventListener('change', () => loadIngresos());
+$('#btn-limpiar-ingreso').addEventListener('click', () => {
+  $('#filtro-ingreso-cat').value = '';
+  $('#filtro-ingreso-desde').value = '';
+  $('#filtro-ingreso-hasta').value = '';
+  loadIngresos();
+});
 
 window.deleteIngreso = async (id) => {
   showConfirm('¿Eliminar este ingreso?', async () => {
@@ -1011,7 +1041,26 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
 
 async function loadGastos() {
   try {
-    const gastos = await request(`/gastos/usuario/${currentUser.id_usuario}`);
+    // Poblar filtro de categorías
+    const selectCat = $('#filtro-gasto-cat');
+    const currentVal = selectCat.value;
+    selectCat.innerHTML = '<option value="">Todas</option>';
+    categorias.filter(c => c.tipo === 'gasto').forEach(c => {
+      selectCat.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`;
+    });
+    selectCat.value = currentVal;
+
+    // Construir URL con filtros
+    let url = `/gastos/usuario/${currentUser.id_usuario}`;
+    const params = new URLSearchParams();
+    const cat = $('#filtro-gasto-cat').value;
+    const desde = $('#filtro-gasto-desde').value;
+    const hasta = $('#filtro-gasto-hasta').value;
+    if (cat) params.set('id_categoria', cat);
+    if (desde && hasta) { params.set('fecha_inicio', desde); params.set('fecha_fin', hasta); }
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const gastos = await request(url);
     const container = $('#lista-gastos');
     if (gastos.length === 0) {
       container.innerHTML = '<p class="text-muted text-center fst-italic">No hay gastos registrados</p>';
@@ -1035,6 +1084,17 @@ async function loadGastos() {
     </table></div>`;
   } catch (err) { console.error('Error cargando gastos:', err); }
 }
+
+// Filtros de gastos
+$('#filtro-gasto-cat').addEventListener('change', () => loadGastos());
+$('#filtro-gasto-desde').addEventListener('change', () => loadGastos());
+$('#filtro-gasto-hasta').addEventListener('change', () => loadGastos());
+$('#btn-limpiar-gasto').addEventListener('click', () => {
+  $('#filtro-gasto-cat').value = '';
+  $('#filtro-gasto-desde').value = '';
+  $('#filtro-gasto-hasta').value = '';
+  loadGastos();
+});
 
 window.deleteGasto = async (id) => {
   showConfirm('¿Eliminar este gasto?', async () => {

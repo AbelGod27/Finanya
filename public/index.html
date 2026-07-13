@@ -397,6 +397,14 @@
           <h4 class="fw-bold"><i class="bi bi-arrow-down-circle text-success me-2"></i>Ingresos<span class="help-icon" data-bs-toggle="tooltip" title="Registra el dinero que recibes: salario, ventas, freelance, etc.">?</span></h4>
           <button class="btn btn-success rounded-pill" id="btn-nuevo-ingreso"><i class="bi bi-plus-lg"></i> Nuevo</button>
         </div>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <select class="form-select form-select-sm rounded-pill" id="filtro-ingreso-cat" style="max-width:180px;">
+            <option value="">Todas</option>
+          </select>
+          <input type="date" class="form-control form-control-sm rounded-pill" id="filtro-ingreso-desde" style="max-width:150px;">
+          <input type="date" class="form-control form-control-sm rounded-pill" id="filtro-ingreso-hasta" style="max-width:150px;">
+          <button class="btn btn-sm btn-outline-secondary rounded-pill" id="btn-limpiar-ingreso" title="Limpiar filtros"><i class="bi bi-x-lg"></i></button>
+        </div>
         <div class="content-card">
           <div class="content-card-body" id="lista-ingresos">
             <p class="text-muted text-center fst-italic py-4">No hay ingresos registrados</p>
@@ -409,6 +417,14 @@
         <div class="section-top">
           <h4 class="fw-bold"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Gastos<span class="help-icon" data-bs-toggle="tooltip" title="Registra tus gastos diarios organizados por categoria y metodo de pago.">?</span></h4>
           <button class="btn btn-danger rounded-pill" id="btn-nuevo-gasto"><i class="bi bi-plus-lg"></i> Nuevo</button>
+        </div>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <select class="form-select form-select-sm rounded-pill" id="filtro-gasto-cat" style="max-width:180px;">
+            <option value="">Todas</option>
+          </select>
+          <input type="date" class="form-control form-control-sm rounded-pill" id="filtro-gasto-desde" style="max-width:150px;">
+          <input type="date" class="form-control form-control-sm rounded-pill" id="filtro-gasto-hasta" style="max-width:150px;">
+          <button class="btn btn-sm btn-outline-secondary rounded-pill" id="btn-limpiar-gasto" title="Limpiar filtros"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="content-card">
           <div class="content-card-body" id="lista-gastos">
