@@ -1253,14 +1253,7 @@ function renderCuentas() {
 window.editarCuenta = (id, nombre, tipo, descripcion) => {
   openModal('Editar Cuenta', [
     { name: 'nombre', label: 'Nombre', required: true, value: nombre },
-    { name: 'tipo', label: 'Tipo', type: 'select', required: true, options: [
-      { value: 'efectivo', label: 'Efectivo', selected: tipo === 'efectivo' },
-      { value: 'banco', label: 'Banco', selected: tipo === 'banco' },
-      { value: 'tarjeta', label: 'Tarjeta', selected: tipo === 'tarjeta' },
-      { value: 'ahorro', label: 'Ahorro', selected: tipo === 'ahorro' },
-      { value: 'otro', label: 'Otro', selected: tipo === 'otro' }
-    ]},
-    { name: 'descripcion', label: 'Descripción', value: descripcion }
+    { name: 'descripcion', label: 'Descripción (opcional)', value: descripcion }
   ], async (data) => {
     try {
       await request(`/cuentas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
