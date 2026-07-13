@@ -1,4 +1,4 @@
-// ===== ANALISIS FINANCIERO INTELIGENTE =====
+// ===== ANALISIS FINANCIERO INTELIGENTE v2 =====
 async function loadAnalisis() {
   try {
     const [ingresos, gastos, metas, userCuentas] = await Promise.all([
@@ -14,149 +14,222 @@ async function loadAnalisis() {
     const mesAnterior = mesActual === 0 ? 11 : mesActual - 1;
     const anioMesAnterior = mesActual === 0 ? anioActual - 1 : anioActual;
 
-    const ingMesActual = ingresos.filter(i => { const f = new Date(i.fecha); return f.getMonth() === mesActual && f.getFullYear() === anioActual; });
-    const ingMesAnterior = ingresos.filter(i => { const f = new Date(i.fecha); return f.getMonth() === mesAnterior && f.getFullYear() === anioMesAnterior; });
-    const gasMesActual = gastos.filter(g => { const f = new Date(g.fecha); return f.getMonth() === mesActual && f.getFullYear() === anioActual; });
-    const gasMesAnterior = gastos.filter(g => { const f = new Date(g.fecha); return f.getMonth() === mesAnterior && f.getFullYear() === anioMesAnterior; });
+    // Filtrar meses
+    const filtraMes = (arr, m, a) => arr.filter(x => { const f = new Date(x.fecha); return f.getMonth() === m && f.getFullYear() === a; });
+    const ingAct = filtraMes(ingresos, mesActual, anioActual);
+    const ingAnt = filtraMes(ingresos, mesAnterior, anioMesAnterior);
+    const gasAct = filtraMes(gastos, mesActual, anioActual);
+    const gasAnt = filtraMes(gastos, mesAnterior, anioMesAnterior);
 
-    const totalIngActual = ingMesActual.reduce((s, i) => s + Number(i.monto), 0);
-    const totalIngAnterior = ingMesAnterior.reduce((s, i) => s + Number(i.monto), 0);
-    const totalGasActual = gasMesActual.reduce((s, g) => s + Number(g.monto), 0);
-    const totalGasAnterior = gasMesAnterior.reduce((s, g) => s + Number(g.monto), 0);
+    const tIngAct = ingAct.reduce((s, i) => s + Number(i.monto), 0);
+    const tIngAnt = ingAnt.reduce((s, i) => s + Number(i.monto), 0);
+    const tGasAct = gasAct.reduce((s, g) => s + Number(g.monto), 0);
+    const tGasAnt = gasAnt.reduce((s, g) => s + Number(g.monto), 0);
 
-    const varIngresos = totalIngAnterior > 0 ? Math.round(((totalIngActual - totalIngAnterior) / totalIngAnterior) * 100) : (totalIngActual > 0 ? 100 : 0);
-    const varGastos = totalGasAnterior > 0 ? Math.round(((totalGasActual - totalGasAnterior) / totalGasAnterior) * 100) : (totalGasActual > 0 ? 100 : 0);
+    const varIng = tIngAnt > 0 ? Math.round(((tIngAct - tIngAnt) / tIngAnt) * 100) : (tIngAct > 0 ? 100 : 0);
+    const varGas = tGasAnt > 0 ? Math.round(((tGasAct - tGasAnt) / tGasAnt) * 100) : (tGasAct > 0 ? 100 : 0);
 
-    const mesesConIng = new Set(ingresos.map(i => `${new Date(i.fecha).getMonth()}-${new Date(i.fecha).getFullYear()}`));
-    const mesesConGas = new Set(gastos.map(g => `${new Date(g.fecha).getMonth()}-${new Date(g.fecha).getFullYear()}`));
-    const promedioIng = mesesConIng.size > 0 ? ingresos.reduce((s, i) => s + Number(i.monto), 0) / mesesConIng.size : 0;
-    const promedioGas = mesesConGas.size > 0 ? gastos.reduce((s, g) => s + Number(g.monto), 0) / mesesConGas.size : 0;
-    const ahorroMensual = promedioIng - promedioGas;
-    const prediccionAnual = ahorroMensual * 12;
+    // Promedios historicos
+    const mesesIng = new Set(ingresos.map(i => new Date(i.fecha).getMonth() + '-' + new Date(i.fecha).getFullYear()));
+    const mesesGas = new Set(gastos.map(g => new Date(g.fecha).getMonth() + '-' + new Date(g.fecha).getFullYear()));
+    const promIng = mesesIng.size > 0 ? ingresos.reduce((s, i) => s + Number(i.monto), 0) / mesesIng.size : 0;
+    const promGas = mesesGas.size > 0 ? gastos.reduce((s, g) => s + Number(g.monto), 0) / mesesGas.size : 0;
+    const ahorroMes = promIng - promGas;
+    const predAnual = ahorroMes * 12;
 
-    const gastosPorCatActual = {};
-    const gastosPorCatAnterior = {};
-    gasMesActual.forEach(g => { gastosPorCatActual[g.categoria_nombre] = (gastosPorCatActual[g.categoria_nombre] || 0) + Number(g.monto); });
-    gasMesAnterior.forEach(g => { gastosPorCatAnterior[g.categoria_nombre] = (gastosPorCatAnterior[g.categoria_nombre] || 0) + Number(g.monto); });
+    // Categorias
+    const catAct = {}, catAnt = {};
+    gasAct.forEach(g => { catAct[g.categoria_nombre] = (catAct[g.categoria_nombre] || 0) + Number(g.monto); });
+    gasAnt.forEach(g => { catAnt[g.categoria_nombre] = (catAnt[g.categoria_nombre] || 0) + Number(g.monto); });
 
     // ===== MOTOR DE INSIGHTS =====
     const insights = [];
-    let saludFinanciera = 10; // base
+    let salud = 10;
 
-    // Tasa de ahorro
-    const tasaAhorro = totalIngActual > 0 ? ((totalIngActual - totalGasActual) / totalIngActual) * 100 : 0;
-    if (tasaAhorro >= 20) { insights.push({i:'bi-piggy-bank',c:'text-success',t:`Tasa de ahorro: <strong>${Math.round(tasaAhorro)}%</strong>. Superas el 20% recomendado.`}); saludFinanciera += 25; }
-    else if (tasaAhorro >= 10) { insights.push({i:'bi-piggy-bank',c:'text-warning',t:`Tasa de ahorro: <strong>${Math.round(tasaAhorro)}%</strong>. Intenta llegar al 20%.`}); saludFinanciera += 15; }
-    else if (tasaAhorro > 0) { insights.push({i:'bi-piggy-bank',c:'text-danger',t:`Tasa de ahorro: solo <strong>${Math.round(tasaAhorro)}%</strong>. Muy por debajo del mínimo.`}); saludFinanciera += 5; }
-    else if (totalIngActual > 0) { insights.push({i:'bi-exclamation-octagon',c:'text-danger',t:`Gastas más de lo que ganas este mes.`}); }
+    // 1. Tasa de ahorro (regla 50/30/20)
+    const tasaAhorro = tIngAct > 0 ? ((tIngAct - tGasAct) / tIngAct) * 100 : 0;
+    if (tasaAhorro >= 20) { insights.push({i:'bi-shield-check',c:'success',t:`Tasa de ahorro: <strong>${Math.round(tasaAhorro)}%</strong> — Cumples la regla del 20%.`}); salud += 25; }
+    else if (tasaAhorro >= 10) { insights.push({i:'bi-shield-exclamation',c:'warning',t:`Tasa de ahorro: <strong>${Math.round(tasaAhorro)}%</strong> — Intenta llegar al 20%.`}); salud += 12; }
+    else if (tasaAhorro > 0) { insights.push({i:'bi-shield-x',c:'danger',t:`Tasa de ahorro: <strong>${Math.round(tasaAhorro)}%</strong> — Muy baja, revisa gastos.`}); salud += 5; }
+    else if (tIngAct > 0) { insights.push({i:'bi-exclamation-octagon',c:'danger',t:`Balance negativo: gastas más de lo que ganas.`}); }
 
-    // Variacion gastos
-    if (varGastos > 20) { insights.push({i:'bi-exclamation-triangle',c:'text-danger',t:`Gastos subieron <strong>${varGastos}%</strong> vs mes anterior.`}); }
-    else if (varGastos < -10) { insights.push({i:'bi-check-circle',c:'text-success',t:`Redujiste gastos un <strong>${Math.abs(varGastos)}%</strong>.`}); saludFinanciera += 15; }
+    // 2. Tendencia de gastos (3 meses)
+    const mes2Ant = mesAnterior === 0 ? 11 : mesAnterior - 1;
+    const anio2Ant = mesAnterior === 0 ? anioMesAnterior - 1 : anioMesAnterior;
+    const gas2Ant = filtraMes(gastos, mes2Ant, anio2Ant);
+    const tGas2Ant = gas2Ant.reduce((s, g) => s + Number(g.monto), 0);
+    if (tGas2Ant > 0 && tGasAnt > 0 && tGasAct > 0) {
+      const tendencia = tGasAct > tGasAnt && tGasAnt > tGas2Ant;
+      if (tendencia) insights.push({i:'bi-arrow-up-right',c:'danger',t:`Tendencia alcista: tus gastos llevan 3 meses subiendo consecutivamente.`});
+      else if (tGasAct < tGasAnt && tGasAnt < tGas2Ant) { insights.push({i:'bi-arrow-down-right',c:'success',t:`Tendencia positiva: llevas 3 meses reduciendo gastos.`}); salud += 10; }
+    }
 
-    // Variacion ingresos
-    if (varIngresos > 10) { insights.push({i:'bi-graph-up-arrow',c:'text-success',t:`Ingresos crecieron <strong>${varIngresos}%</strong>.`}); saludFinanciera += 10; }
-    else if (varIngresos < -10) { insights.push({i:'bi-graph-down-arrow',c:'text-danger',t:`Ingresos bajaron <strong>${Math.abs(varIngresos)}%</strong>.`}); }
+    // 3. Variacion mensual
+    if (varGas > 30) insights.push({i:'bi-exclamation-triangle',c:'danger',t:`Gastos subieron <strong>${varGas}%</strong> vs mes anterior — Alerta.`});
+    else if (varGas > 10) insights.push({i:'bi-arrow-up',c:'warning',t:`Gastos subieron <strong>${varGas}%</strong> — Moderado.`});
+    else if (varGas < -15) { insights.push({i:'bi-check2-circle',c:'success',t:`Redujiste gastos <strong>${Math.abs(varGas)}%</strong> — Excelente.`}); salud += 10; }
 
-    // Categoria top
-    const topCat = Object.entries(gastosPorCatActual).sort((a, b) => b[1] - a[1])[0];
+    if (varIng > 15) { insights.push({i:'bi-graph-up-arrow',c:'success',t:`Ingresos crecieron <strong>${varIng}%</strong>.`}); salud += 8; }
+    else if (varIng < -15) insights.push({i:'bi-graph-down-arrow',c:'danger',t:`Ingresos cayeron <strong>${Math.abs(varIng)}%</strong>.`});
+
+    // 4. Concentracion de gastos (diversificacion)
+    const topCat = Object.entries(catAct).sort((a, b) => b[1] - a[1])[0];
+    const numCatsUsadas = Object.keys(catAct).length;
     if (topCat) {
-      const pctTop = totalGasActual > 0 ? Math.round((topCat[1] / totalGasActual) * 100) : 0;
-      if (pctTop > 50) insights.push({i:'bi-pie-chart',c:'text-warning',t:`<strong>${topCat[0]}</strong> concentra el ${pctTop}% de gastos.`});
-      else { insights.push({i:'bi-pie-chart',c:'text-info',t:`Mayor gasto: <strong>${topCat[0]}</strong> (${pctTop}%).`}); saludFinanciera += 10; }
+      const pctTop = tGasAct > 0 ? Math.round((topCat[1] / tGasAct) * 100) : 0;
+      if (pctTop > 60) insights.push({i:'bi-pie-chart',c:'danger',t:`<strong>${topCat[0]}</strong> concentra ${pctTop}% de gastos — Poca diversificación.`});
+      else if (pctTop > 40) insights.push({i:'bi-pie-chart',c:'warning',t:`Mayor gasto: <strong>${topCat[0]}</strong> (${pctTop}%).`});
+      else { insights.push({i:'bi-pie-chart',c:'success',t:`Gastos bien distribuidos en ${numCatsUsadas} categorías.`}); salud += 8; }
     }
 
-    // Patron semanal
-    const diasSemana = [0,0,0,0,0,0,0];
-    gasMesActual.forEach(g => { diasSemana[new Date(g.fecha).getDay()] += Number(g.monto); });
-    const diasNombres = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    const diaMax = diasSemana.indexOf(Math.max(...diasSemana));
-    if (Math.max(...diasSemana) > 0) insights.push({i:'bi-calendar-week',c:'text-info',t:`Día de mayor gasto: <strong>${diasNombres[diaMax]}</strong>.`});
+    // 5. Patron semanal y gasto impulsivo
+    const diasSem = [0,0,0,0,0,0,0];
+    const gastoPorDia = {};
+    gasAct.forEach(g => { 
+      const f = new Date(g.fecha);
+      diasSem[f.getDay()] += Number(g.monto);
+      const key = f.getDate();
+      gastoPorDia[key] = (gastoPorDia[key] || 0) + Number(g.monto);
+    });
+    const diasNom = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const diaMax = diasSem.indexOf(Math.max(...diasSem));
+    if (Math.max(...diasSem) > 0) insights.push({i:'bi-calendar-week',c:'info',t:`Día de mayor gasto: <strong>${diasNom[diaMax]}</strong>.`});
 
-    // Frecuencia
-    const diasConGasto = new Set(gasMesActual.map(g => new Date(g.fecha).getDate())).size;
-    const diasDelMes = new Date(anioActual, mesActual + 1, 0).getDate();
-    if (diasConGasto / diasDelMes > 0.7) insights.push({i:'bi-calendar-check',c:'text-warning',t:`Gastas el ${Math.round(diasConGasto/diasDelMes*100)}% de los días. Agrupa compras.`});
-    else saludFinanciera += 10;
+    // Detectar gastos atipicos (outliers)
+    const montos = gasAct.map(g => Number(g.monto));
+    if (montos.length > 3) {
+      const media = montos.reduce((a,b) => a+b, 0) / montos.length;
+      const desv = Math.sqrt(montos.reduce((s, m) => s + Math.pow(m - media, 2), 0) / montos.length);
+      const atipicos = gasAct.filter(g => Number(g.monto) > media + 2 * desv);
+      if (atipicos.length > 0) {
+        insights.push({i:'bi-lightning',c:'warning',t:`Detectados <strong>${atipicos.length} gasto(s) atípico(s)</strong> (muy por encima del promedio).`});
+      }
+    }
 
-    // Metas
-    const metasActivas = metas.filter(m => Number(m.monto_objetivo) > 0);
+    // 6. Frecuencia de gastos
+    const diasConGasto = Object.keys(gastoPorDia).length;
+    const diasMes = new Date(anioActual, mesActual + 1, 0).getDate();
+    const freq = Math.round((diasConGasto / diasMes) * 100);
+    if (freq > 75) insights.push({i:'bi-calendar-check',c:'warning',t:`Gastas el ${freq}% de los días — Posible gasto impulsivo.`});
+    else salud += 8;
+
+    // 7. Gasto promedio por transaccion
+    const gastoPromTx = gasAct.length > 0 ? tGasAct / gasAct.length : 0;
+    const ingresoPromTx = ingAct.length > 0 ? tIngAct / ingAct.length : 0;
+    if (gastoPromTx > 0) insights.push({i:'bi-receipt',c:'info',t:`Gasto promedio por transacción: <strong>${formatMoney(gastoPromTx)}</strong> (${gasAct.length} transacciones).`});
+
+    // 8. Metas de ahorro
+    const metasActivas = metas.filter(m => m.monto_objetivo && Number(m.monto_objetivo) > 0);
     if (metasActivas.length > 0) {
-      const progProm = metasActivas.reduce((s, m) => s + Number(m.porcentaje_avance || 0), 0) / metasActivas.length;
-      insights.push({i:'bi-bullseye',c: progProm > 50 ? 'text-success' : 'text-info',t:`${metasActivas.length} meta(s) con <strong>${Math.round(progProm)}%</strong> promedio.`});
-      if (progProm > 50) saludFinanciera += 10;
+      const prog = metasActivas.reduce((s, m) => s + Number(m.porcentaje_avance || 0), 0) / metasActivas.length;
+      insights.push({i:'bi-bullseye',c: prog > 60 ? 'success' : 'info',t:`${metasActivas.length} meta(s) activa(s) — Progreso: <strong>${Math.round(prog)}%</strong>.`});
+      if (prog > 50) salud += 8;
+    } else {
+      insights.push({i:'bi-bullseye',c:'warning',t:`Sin metas de ahorro activas. Crea una para mantener el enfoque.`});
     }
 
-    // Deuda
-    const deudaTotal = userCuentas.filter(c => c.tipo === 'credito').reduce((s, c) => s + Math.abs(Number(c.saldo_actual)), 0);
-    const saldoPositivo = userCuentas.filter(c => c.tipo !== 'credito').reduce((s, c) => s + Number(c.saldo_actual), 0);
-    if (deudaTotal > 0) {
-      const ratio = saldoPositivo > 0 ? Math.round((deudaTotal / saldoPositivo) * 100) : 100;
-      if (ratio > 50) insights.push({i:'bi-credit-card',c:'text-danger',t:`Deuda de tarjetas: ${formatMoney(deudaTotal)} (${ratio}% de tu patrimonio).`});
-      else { insights.push({i:'bi-credit-card',c:'text-warning',t:`Deuda controlada: ${formatMoney(deudaTotal)}.`}); saludFinanciera += 5; }
-    } else { saludFinanciera += 10; }
+    // 9. Deuda en tarjetas
+    const deuda = userCuentas.filter(c => c.tipo === 'credito').reduce((s, c) => s + Math.abs(Number(c.saldo_actual)), 0);
+    const patrimonio = userCuentas.filter(c => c.tipo !== 'credito').reduce((s, c) => s + Number(c.saldo_actual), 0);
+    if (deuda > 0) {
+      const ratio = patrimonio > 0 ? Math.round((deuda / patrimonio) * 100) : 100;
+      if (ratio > 80) insights.push({i:'bi-credit-card',c:'danger',t:`Deuda alta: ${formatMoney(deuda)} (${ratio}% del patrimonio).`});
+      else if (ratio > 30) insights.push({i:'bi-credit-card',c:'warning',t:`Deuda: ${formatMoney(deuda)} — Ratio ${ratio}%.`});
+      else { insights.push({i:'bi-credit-card',c:'info',t:`Deuda controlada: ${formatMoney(deuda)}.`}); salud += 5; }
+    } else { salud += 12; insights.push({i:'bi-check-circle',c:'success',t:`Sin deudas en tarjetas de crédito.`}); }
 
-    saludFinanciera = Math.min(100, Math.max(0, saludFinanciera));
-    const saludColor = saludFinanciera >= 70 ? 'success' : saludFinanciera >= 40 ? 'warning' : 'danger';
-    const saludTexto = saludFinanciera >= 70 ? 'Excelente' : saludFinanciera >= 40 ? 'Regular' : 'Necesita atención';
+    // 10. Estabilidad de ingresos
+    if (mesesIng.size >= 3) {
+      const ingMensuales = [];
+      mesesIng.forEach(m => {
+        const [mes, anio] = m.split('-').map(Number);
+        const total = ingresos.filter(i => { const f = new Date(i.fecha); return f.getMonth() === mes && f.getFullYear() === anio; }).reduce((s, i) => s + Number(i.monto), 0);
+        ingMensuales.push(total);
+      });
+      const mediaIng = ingMensuales.reduce((a,b) => a+b, 0) / ingMensuales.length;
+      const desvIng = Math.sqrt(ingMensuales.reduce((s, m) => s + Math.pow(m - mediaIng, 2), 0) / ingMensuales.length);
+      const coefVar = mediaIng > 0 ? (desvIng / mediaIng) * 100 : 0;
+      if (coefVar < 20) { insights.push({i:'bi-bar-chart-steps',c:'success',t:`Ingresos estables (variación: ${Math.round(coefVar)}%).`}); salud += 8; }
+      else if (coefVar > 50) insights.push({i:'bi-bar-chart-steps',c:'warning',t:`Ingresos inestables (variación: ${Math.round(coefVar)}%). Considera diversificar.`});
+    }
 
-    // Recomendaciones
+    salud = Math.min(100, Math.max(0, salud));
+    const sColor = salud >= 70 ? 'success' : salud >= 40 ? 'warning' : 'danger';
+    const sTexto = salud >= 80 ? 'Excelente' : salud >= 60 ? 'Buena' : salud >= 40 ? 'Regular' : 'Necesita atención';
+
+    // ===== RECOMENDACIONES =====
     const recs = [];
-    if (tasaAhorro < 20 && totalIngActual > 0) { const f = (totalIngActual * 0.2) - (totalIngActual - totalGasActual); if (f > 0) recs.push(`Reduce ${formatMoney(f)} en gastos para alcanzar el 20% de ahorro.`); }
-    if (topCat && topCat[1] > totalGasActual * 0.4) recs.push(`Busca alternativas en "${topCat[0]}" — concentra mucho gasto.`);
-    if (deudaTotal > 0 && ahorroMensual > 0) recs.push(`Podrías liquidar tu deuda en ~${Math.ceil(deudaTotal / ahorroMensual)} mes(es).`);
-    if (prediccionAnual > 0) recs.push(`Predicción de ahorro anual: ${formatMoney(prediccionAnual)}.`);
-    else recs.push(`Revisa tus gastos más grandes — estás en negativo.`);
-    if (metasActivas.length === 0) recs.push(`Crea una meta de ahorro para mantenerte motivado.`);
+    if (tasaAhorro < 20 && tIngAct > 0) { const f = (tIngAct * 0.2) - (tIngAct - tGasAct); if (f > 0) recs.push(`Reduce ${formatMoney(f)} en gastos para alcanzar el 20% de ahorro.`); }
+    if (topCat && topCat[1] > tGasAct * 0.4) recs.push(`"${topCat[0]}" consume mucho. Busca alternativas más económicas.`);
+    if (deuda > 0 && ahorroMes > 0) recs.push(`Liquida tu deuda en ~${Math.ceil(deuda / ahorroMes)} mes(es) con tu ahorro actual.`);
+    if (predAnual > 0) recs.push(`Predicción anual: ${formatMoney(predAnual)} de ahorro.`);
+    else recs.push(`Estás en números rojos. Prioriza reducir el gasto más grande.`);
+    if (metasActivas.length === 0) recs.push(`Crea una meta de ahorro para visualizar tu progreso.`);
+    if (freq > 60) recs.push(`Intenta hacer compras planificadas en vez de diarias.`);
+    if (numCatsUsadas <= 2 && gasAct.length > 5) recs.push(`Categoriza mejor tus gastos para entender a dónde va tu dinero.`);
+    if (gastoPromTx > promGas * 0.3 && gasAct.length < 5) recs.push(`Pocos gastos pero grandes. Verifica si son necesarios.`);
 
     // ===== RENDER =====
-    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const mNom = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+    // Salud financiera
     $('#analisis-resumen').innerHTML = `
       <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-        <div class="text-center">
+        <div class="text-center flex-shrink-0">
           <div class="position-relative d-inline-block">
-            <svg width="80" height="80"><circle cx="40" cy="40" r="35" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="40" cy="40" r="35" fill="none" stroke="var(--${saludColor})" stroke-width="6" stroke-dasharray="${saludFinanciera * 2.2} 220" stroke-linecap="round" transform="rotate(-90 40 40)"/></svg>
-            <span class="position-absolute top-50 start-50 translate-middle fw-bold">${saludFinanciera}</span>
+            <svg width="90" height="90"><circle cx="45" cy="45" r="38" fill="none" stroke="var(--border)" stroke-width="7"/><circle cx="45" cy="45" r="38" fill="none" stroke="var(--${sColor})" stroke-width="7" stroke-dasharray="${salud * 2.39} 239" stroke-linecap="round" transform="rotate(-90 45 45)"/></svg>
+            <span class="position-absolute top-50 start-50 translate-middle fw-bold fs-5">${salud}</span>
           </div>
-          <div class="small fw-semibold text-${saludColor} mt-1">${saludTexto}</div>
+          <div class="small fw-bold text-${sColor} mt-1">${sTexto}</div>
         </div>
         <div class="flex-grow-1">
           <h6 class="fw-bold mb-1">Salud Financiera</h6>
-          <p class="small text-muted mb-0">Basado en ahorro, deuda, diversificación, frecuencia y metas.</p>
+          <p class="small text-muted mb-2">Calculado con: ahorro, deuda, diversificación, estabilidad, tendencias y metas.</p>
+          <div class="d-flex gap-3 small">
+            <span class="text-success"><i class="bi bi-arrow-down-circle me-1"></i>${formatMoney(tIngAct)}</span>
+            <span class="text-danger"><i class="bi bi-arrow-up-circle me-1"></i>${formatMoney(tGasAct)}</span>
+            <span class="text-primary"><i class="bi bi-wallet2 me-1"></i>${formatMoney(tIngAct - tGasAct)}</span>
+          </div>
         </div>
       </div>
-      ${insights.map(x => `<div class="d-flex align-items-start gap-2 py-1"><i class="bi ${x.i} ${x.c} mt-1"></i><span class="small">${x.t}</span></div>`).join('')}
-    `;
+      <hr class="my-2">
+      <div class="row g-2">
+        ${insights.map(x => `<div class="col-12"><div class="d-flex align-items-start gap-2 py-1"><i class="bi ${x.i} text-${x.c} mt-1 flex-shrink-0"></i><span class="small">${x.t}</span></div></div>`).join('')}
+      </div>`;
 
+    // Comparacion
     $('#analisis-comparacion').innerHTML = `
-      <div class="table-responsive"><table class="table table-sm mb-0">
-        <thead><tr><th></th><th>${meses[mesAnterior]}</th><th>${meses[mesActual]}</th><th>Var</th></tr></thead>
+      <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+        <thead><tr><th></th><th>${mNom[mesAnterior]}</th><th>${mNom[mesActual]}</th><th>Var</th></tr></thead>
         <tbody>
-          <tr><td class="fw-medium">Ingresos</td><td>${formatMoney(totalIngAnterior)}</td><td>${formatMoney(totalIngActual)}</td><td><span class="badge bg-${varIngresos>=0?'success':'danger'} bg-opacity-10 text-${varIngresos>=0?'success':'danger'}">${varIngresos>=0?'+':''}${varIngresos}%</span></td></tr>
-          <tr><td class="fw-medium">Gastos</td><td>${formatMoney(totalGasAnterior)}</td><td>${formatMoney(totalGasActual)}</td><td><span class="badge bg-${varGastos<=0?'success':'danger'} bg-opacity-10 text-${varGastos<=0?'success':'danger'}">${varGastos>=0?'+':''}${varGastos}%</span></td></tr>
-          <tr><td class="fw-medium">Balance</td><td>${formatMoney(totalIngAnterior-totalGasAnterior)}</td><td>${formatMoney(totalIngActual-totalGasActual)}</td><td></td></tr>
+          <tr><td class="fw-medium"><i class="bi bi-arrow-down-circle text-success me-1"></i>Ingresos</td><td>${formatMoney(tIngAnt)}</td><td>${formatMoney(tIngAct)}</td><td><span class="badge bg-${varIng>=0?'success':'danger'} bg-opacity-10 text-${varIng>=0?'success':'danger'}">${varIng>=0?'+':''}${varIng}%</span></td></tr>
+          <tr><td class="fw-medium"><i class="bi bi-arrow-up-circle text-danger me-1"></i>Gastos</td><td>${formatMoney(tGasAnt)}</td><td>${formatMoney(tGasAct)}</td><td><span class="badge bg-${varGas<=0?'success':'danger'} bg-opacity-10 text-${varGas<=0?'success':'danger'}">${varGas>=0?'+':''}${varGas}%</span></td></tr>
+          <tr><td class="fw-medium"><i class="bi bi-wallet2 text-primary me-1"></i>Balance</td><td>${formatMoney(tIngAnt-tGasAnt)}</td><td>${formatMoney(tIngAct-tGasAct)}</td><td></td></tr>
         </tbody>
-      </table></div>`;
+      </table></div>
+      <div class="mt-3 small text-muted"><i class="bi bi-info-circle me-1"></i>Gasto promedio/transacción: ${formatMoney(gastoPromTx)} · Transacciones: ${gasAct.length}</div>`;
 
+    // Promedios + Recomendaciones
     $('#analisis-promedios').innerHTML = `
       <div class="d-flex flex-column gap-2 mb-3">
-        <div class="d-flex justify-content-between"><span class="small text-muted">Promedio ingresos</span><span class="fw-bold text-success">${formatMoney(promedioIng)}</span></div>
-        <div class="d-flex justify-content-between"><span class="small text-muted">Promedio gastos</span><span class="fw-bold text-danger">${formatMoney(promedioGas)}</span></div>
-        <div class="d-flex justify-content-between"><span class="small text-muted">Ahorro mensual</span><span class="fw-bold text-${ahorroMensual>=0?'primary':'danger'}">${formatMoney(ahorroMensual)}</span></div>
+        <div class="d-flex justify-content-between"><span class="small text-muted">Promedio ingresos/mes</span><span class="fw-bold text-success">${formatMoney(promIng)}</span></div>
+        <div class="d-flex justify-content-between"><span class="small text-muted">Promedio gastos/mes</span><span class="fw-bold text-danger">${formatMoney(promGas)}</span></div>
+        <div class="d-flex justify-content-between"><span class="small text-muted">Capacidad de ahorro</span><span class="fw-bold text-${ahorroMes>=0?'primary':'danger'}">${formatMoney(ahorroMes)}/mes</span></div>
+        <div class="d-flex justify-content-between"><span class="small text-muted">Predicción anual</span><span class="fw-bold text-${predAnual>=0?'primary':'danger'}">${formatMoney(predAnual)}</span></div>
       </div>
       <hr class="my-2">
-      <h6 class="fw-semibold small mb-2"><i class="bi bi-lightbulb text-warning me-1"></i>Recomendaciones</h6>
-      <ul class="list-unstyled small mb-0">${recs.map(r => `<li class="mb-2"><i class="bi bi-arrow-right-circle text-primary me-2"></i>${r}</li>`).join('')}</ul>`;
+      <h6 class="fw-semibold small mb-2"><i class="bi bi-lightbulb text-warning me-1"></i>Recomendaciones personalizadas</h6>
+      <ul class="list-unstyled small mb-0">${recs.map(r => `<li class="mb-2 d-flex gap-2"><i class="bi bi-arrow-right-circle text-primary flex-shrink-0 mt-1"></i><span>${r}</span></li>`).join('')}</ul>`;
 
-    const allCats = {...gastosPorCatActual};
-    Object.keys(gastosPorCatAnterior).forEach(c => { if (!allCats[c]) allCats[c] = 0; });
-    const catRows = Object.keys(allCats).sort((a,b) => (gastosPorCatActual[b]||0) - (gastosPorCatActual[a]||0)).map(cat => {
-      const act = gastosPorCatActual[cat]||0, ant = gastosPorCatAnterior[cat]||0;
+    // Categorias
+    const allCats = {...catAct}; Object.keys(catAnt).forEach(c => { if (!allCats[c]) allCats[c] = 0; });
+    const catRows = Object.keys(allCats).sort((a,b) => (catAct[b]||0) - (catAct[a]||0)).map(cat => {
+      const act = catAct[cat]||0, ant = catAnt[cat]||0;
       const v = ant > 0 ? Math.round(((act-ant)/ant)*100) : (act > 0 ? 100 : 0);
-      return `<tr><td>${cat}</td><td>${formatMoney(ant)}</td><td>${formatMoney(act)}</td><td><span class="badge bg-${v<=0?'success':'danger'} bg-opacity-10 text-${v<=0?'success':'danger'}">${v>=0?'+':''}${v}%</span></td></tr>`;
+      const pct = tGasAct > 0 ? Math.round((act/tGasAct)*100) : 0;
+      return `<tr><td class="fw-medium">${cat}</td><td>${formatMoney(ant)}</td><td>${formatMoney(act)}</td><td>${pct}%</td><td><span class="badge bg-${v<=0?'success':'danger'} bg-opacity-10 text-${v<=0?'success':'danger'}">${v>=0?'+':''}${v}%</span></td></tr>`;
     }).join('');
-    $('#analisis-categorias').innerHTML = catRows ? `<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Categoría</th><th>Anterior</th><th>Actual</th><th>Var</th></tr></thead><tbody>${catRows}</tbody></table></div>` : '<p class="text-muted text-center small">Sin datos</p>';
+    $('#analisis-categorias').innerHTML = catRows ? `<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Categoría</th><th>Anterior</th><th>Actual</th><th>% Total</th><th>Var</th></tr></thead><tbody>${catRows}</tbody></table></div>` : '<p class="text-muted text-center small py-3">Sin datos</p>';
 
   } catch (err) { console.error('Error cargando análisis:', err); }
 }
