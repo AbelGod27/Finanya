@@ -924,62 +924,60 @@ $('#btn-nuevo-ingreso').addEventListener('click', async () => {
   });
 });
 
+let ingresosData = [];
+let ingresosSort = { col: 'fecha', dir: 'desc' };
+
 async function loadIngresos() {
   try {
-    // Poblar filtro de categorías
-    const selectCat = $('#filtro-ingreso-cat');
-    const currentVal = selectCat.value;
-    selectCat.innerHTML = '<option value="">Todas</option>';
-    categorias.filter(c => c.tipo === 'ingreso').forEach(c => {
-      selectCat.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`;
-    });
-    selectCat.value = currentVal;
-
-    // Construir URL con filtros
-    let url = `/ingresos/usuario/${currentUser.id_usuario}`;
-    const params = new URLSearchParams();
-    const cat = $('#filtro-ingreso-cat').value;
-    const desde = $('#filtro-ingreso-desde').value;
-    const hasta = $('#filtro-ingreso-hasta').value;
-    if (cat) params.set('id_categoria', cat);
-    if (desde && hasta) { params.set('fecha_inicio', desde); params.set('fecha_fin', hasta); }
-    if (params.toString()) url += `?${params.toString()}`;
-
-    const ingresos = await request(url);
-    const container = $('#lista-ingresos');
-    if (ingresos.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center fst-italic">No hay ingresos registrados</p>';
-      return;
-    }
-    container.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
-      <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th>Acciones</th></tr></thead>
-      <tbody>${ingresos.map(i => `
-        <tr>
-          <td>${new Date(i.fecha).toLocaleDateString('es-MX')}</td>
-          <td>${i.descripcion}</td>
-          <td><span class="badge bg-success">${i.categoria_nombre}</span></td>
-          <td class="mov-ingreso fw-bold">${formatMoney(i.monto)}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editIngreso(${i.id_ingreso}, '${i.descripcion.replace(/'/g, "\\'")}', ${i.monto}, '${i.fecha}')"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteIngreso(${i.id_ingreso})"><i class="bi bi-trash"></i></button>
-          </td>
-        </tr>
-      `).join('')}</tbody>
-    </table></div>`;
+    ingresosData = await request(`/ingresos/usuario/${currentUser.id_usuario}`);
+    renderIngresosTable();
   } catch (err) { console.error('Error cargando ingresos:', err); }
 }
 
-// Filtros de ingresos
-$('#filtro-ingreso-cat').addEventListener('change', () => loadIngresos());
-$('#filtro-ingreso-desde').addEventListener('change', () => loadIngresos());
-$('#filtro-ingreso-hasta').addEventListener('change', () => loadIngresos());
-$('#btn-limpiar-ingreso').addEventListener('click', () => {
-  $('#filtro-ingreso-cat').value = '';
-  $('#filtro-ingreso-desde').value = '';
-  $('#filtro-ingreso-hasta').value = '';
-  loadIngresos();
-});
+function renderIngresosTable() {
+  const container = $('#lista-ingresos');
+  if (ingresosData.length === 0) {
+    container.innerHTML = '<p class="text-muted text-center fst-italic py-4">No hay ingresos registrados</p>';
+    return;
+  }
+  const sorted = [...ingresosData].sort((a, b) => {
+    let va = a[ingresosSort.col], vb = b[ingresosSort.col];
+    if (ingresosSort.col === 'monto') { va = Number(va); vb = Number(vb); }
+    else if (ingresosSort.col === 'fecha') { va = new Date(va); vb = new Date(vb); }
+    else { va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase(); }
+    if (va < vb) return ingresosSort.dir === 'asc' ? -1 : 1;
+    if (va > vb) return ingresosSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  const arrow = (col) => ingresosSort.col === col ? (ingresosSort.dir === 'asc' ? ' <i class="bi bi-caret-up-fill small"></i>' : ' <i class="bi bi-caret-down-fill small"></i>') : ' <i class="bi bi-chevron-expand small text-muted opacity-50"></i>';
+  container.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
+    <thead><tr>
+      <th class="sortable-th" onclick="sortIngresos('fecha')">Fecha${arrow('fecha')}</th>
+      <th>Descripcion</th>
+      <th class="sortable-th" onclick="sortIngresos('categoria_nombre')">Categoria${arrow('categoria_nombre')}</th>
+      <th class="sortable-th" onclick="sortIngresos('monto')">Monto${arrow('monto')}</th>
+      <th class="text-end">Acciones</th>
+    </tr></thead>
+    <tbody>${sorted.map(i => `
+      <tr>
+        <td>${new Date(i.fecha).toLocaleDateString('es-MX')}</td>
+        <td>${i.descripcion || '-'}</td>
+        <td><span class="badge bg-success">${i.categoria_nombre}</span></td>
+        <td class="mov-ingreso fw-bold">${formatMoney(i.monto)}</td>
+        <td class="text-end text-nowrap">
+          <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="editIngreso(${i.id_ingreso}, '${(i.descripcion || '').replace(/'/g, "\\'")}', ${i.monto}, '${i.fecha}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger rounded-circle ms-1" onclick="deleteIngreso(${i.id_ingreso})"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>
+    `).join('')}</tbody>
+  </table></div>`;
+}
 
+window.sortIngresos = (col) => {
+  if (ingresosSort.col === col) ingresosSort.dir = ingresosSort.dir === 'asc' ? 'desc' : 'asc';
+  else { ingresosSort.col = col; ingresosSort.dir = 'asc'; }
+  renderIngresosTable();
+};
 window.deleteIngreso = async (id) => {
   showConfirm('¿Eliminar este ingreso?', async () => {
     try {
@@ -1039,62 +1037,62 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
   });
 });
 
+let gastosData = [];
+let gastosSort = { col: 'fecha', dir: 'desc' };
+
 async function loadGastos() {
   try {
-    // Poblar filtro de categorías
-    const selectCat = $('#filtro-gasto-cat');
-    const currentVal = selectCat.value;
-    selectCat.innerHTML = '<option value="">Todas</option>';
-    categorias.filter(c => c.tipo === 'gasto').forEach(c => {
-      selectCat.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`;
-    });
-    selectCat.value = currentVal;
-
-    // Construir URL con filtros
-    let url = `/gastos/usuario/${currentUser.id_usuario}`;
-    const params = new URLSearchParams();
-    const cat = $('#filtro-gasto-cat').value;
-    const desde = $('#filtro-gasto-desde').value;
-    const hasta = $('#filtro-gasto-hasta').value;
-    if (cat) params.set('id_categoria', cat);
-    if (desde && hasta) { params.set('fecha_inicio', desde); params.set('fecha_fin', hasta); }
-    if (params.toString()) url += `?${params.toString()}`;
-
-    const gastos = await request(url);
-    const container = $('#lista-gastos');
-    if (gastos.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center fst-italic">No hay gastos registrados</p>';
-      return;
-    }
-    container.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
-      <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Método</th><th>Monto</th><th>Acciones</th></tr></thead>
-      <tbody>${gastos.map(g => `
-        <tr>
-          <td>${new Date(g.fecha).toLocaleDateString('es-MX')}</td>
-          <td>${g.descripcion}</td>
-          <td><span class="badge bg-danger">${g.categoria_nombre}</span></td>
-          <td>${g.metodo_pago}</td>
-          <td class="mov-gasto fw-bold">${formatMoney(g.monto)}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editGasto(${g.id_gasto}, '${g.descripcion.replace(/'/g, "\\'")}', ${g.monto}, '${g.fecha}', '${g.metodo_pago}')"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteGasto(${g.id_gasto})"><i class="bi bi-trash"></i></button>
-          </td>
-        </tr>
-      `).join('')}</tbody>
-    </table></div>`;
+    gastosData = await request(`/gastos/usuario/${currentUser.id_usuario}`);
+    renderGastosTable();
   } catch (err) { console.error('Error cargando gastos:', err); }
 }
 
-// Filtros de gastos
-$('#filtro-gasto-cat').addEventListener('change', () => loadGastos());
-$('#filtro-gasto-desde').addEventListener('change', () => loadGastos());
-$('#filtro-gasto-hasta').addEventListener('change', () => loadGastos());
-$('#btn-limpiar-gasto').addEventListener('click', () => {
-  $('#filtro-gasto-cat').value = '';
-  $('#filtro-gasto-desde').value = '';
-  $('#filtro-gasto-hasta').value = '';
-  loadGastos();
-});
+function renderGastosTable() {
+  const container = $('#lista-gastos');
+  if (gastosData.length === 0) {
+    container.innerHTML = '<p class="text-muted text-center fst-italic py-4">No hay gastos registrados</p>';
+    return;
+  }
+  const sorted = [...gastosData].sort((a, b) => {
+    let va = a[gastosSort.col], vb = b[gastosSort.col];
+    if (gastosSort.col === 'monto') { va = Number(va); vb = Number(vb); }
+    else if (gastosSort.col === 'fecha') { va = new Date(va); vb = new Date(vb); }
+    else { va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase(); }
+    if (va < vb) return gastosSort.dir === 'asc' ? -1 : 1;
+    if (va > vb) return gastosSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  const arrow = (col) => gastosSort.col === col ? (gastosSort.dir === 'asc' ? ' <i class="bi bi-caret-up-fill small"></i>' : ' <i class="bi bi-caret-down-fill small"></i>') : ' <i class="bi bi-chevron-expand small text-muted opacity-50"></i>';
+  container.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
+    <thead><tr>
+      <th class="sortable-th" onclick="sortGastos('fecha')">Fecha${arrow('fecha')}</th>
+      <th>Descripcion</th>
+      <th class="sortable-th" onclick="sortGastos('categoria_nombre')">Categoria${arrow('categoria_nombre')}</th>
+      <th>Metodo</th>
+      <th class="sortable-th" onclick="sortGastos('monto')">Monto${arrow('monto')}</th>
+      <th class="text-end">Acciones</th>
+    </tr></thead>
+    <tbody>${sorted.map(g => `
+      <tr>
+        <td>${new Date(g.fecha).toLocaleDateString('es-MX')}</td>
+        <td>${g.descripcion || '-'}</td>
+        <td><span class="badge bg-danger">${g.categoria_nombre}</span></td>
+        <td>${g.metodo_pago}</td>
+        <td class="mov-gasto fw-bold">${formatMoney(g.monto)}</td>
+        <td class="text-end text-nowrap">
+          <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="editGasto(${g.id_gasto}, '${(g.descripcion || '').replace(/'/g, "\\'")}', ${g.monto}, '${g.fecha}', '${g.metodo_pago}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger rounded-circle ms-1" onclick="deleteGasto(${g.id_gasto})"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>
+    `).join('')}</tbody>
+  </table></div>`;
+}
+
+window.sortGastos = (col) => {
+  if (gastosSort.col === col) gastosSort.dir = gastosSort.dir === 'asc' ? 'desc' : 'asc';
+  else { gastosSort.col = col; gastosSort.dir = 'asc'; }
+  renderGastosTable();
+};
 
 window.deleteGasto = async (id) => {
   showConfirm('¿Eliminar este gasto?', async () => {

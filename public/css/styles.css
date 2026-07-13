@@ -944,3 +944,14 @@ select.form-select option:checked {
     min-height: 30px;
   }
 }
+
+
+/* ===== SORTABLE TABLE HEADERS ===== */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition);
+}
+.sortable-th:hover {
+  color: var(--primary) !important;
+}
