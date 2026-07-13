@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS cuentas (
   tipo VARCHAR(30) NOT NULL DEFAULT 'efectivo',
   saldo_inicial DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   saldo_actual DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  limite_credito DECIMAL(12,2) DEFAULT NULL,
+  fecha_corte INT DEFAULT NULL,
+  fecha_pago INT DEFAULT NULL,
   descripcion VARCHAR(255),
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE

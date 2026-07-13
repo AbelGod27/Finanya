@@ -1137,14 +1137,23 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
     { name: 'tipo', label: 'Tipo', type: 'select', required: true, options: [
       { value: 'efectivo', label: 'Efectivo', selected: true },
       { value: 'banco', label: 'Banco' },
-      { value: 'tarjeta', label: 'Tarjeta' },
+      { value: 'tarjeta', label: 'Tarjeta de débito' },
+      { value: 'credito', label: 'Tarjeta de crédito' },
       { value: 'ahorro', label: 'Ahorro' },
       { value: 'otro', label: 'Otro' }
     ]},
     { name: 'saldo_inicial', label: 'Saldo inicial', type: 'number', required: true, step: '0.01', min: '0', value: '0', placeholder: '0.00' },
+    { name: '_separator', label: '<a href="#" class="small text-primary" onclick="document.getElementById(\'cuenta-credito-opts\').classList.toggle(\'d-none\'); return false;"><i class="bi bi-credit-card me-1"></i>Opciones de tarjeta de crédito</a>', type: 'html' },
+    { name: 'limite_credito', label: 'Límite de crédito', type: 'number', step: '0.01', min: '0', placeholder: 'Ej: 10000', wrapper: 'cuenta-credito-opts', hidden: true },
+    { name: 'fecha_corte', label: 'Día de corte (1-31)', type: 'number', min: '1', placeholder: 'Ej: 15', wrapper: 'cuenta-credito-opts', hidden: true },
+    { name: 'fecha_pago', label: 'Día de pago (1-31)', type: 'number', min: '1', placeholder: 'Ej: 5', wrapper: 'cuenta-credito-opts', hidden: true },
     { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Cuenta de nómina' }
   ], async (data) => {
     try {
+      if (!data.limite_credito) delete data.limite_credito;
+      if (!data.fecha_corte) delete data.fecha_corte;
+      if (!data.fecha_pago) delete data.fecha_pago;
+      delete data._separator;
       await request('/cuentas', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadCuentas();
@@ -1171,7 +1180,7 @@ function renderCuentas() {
   }
 
   const total = cuentas.reduce((s, c) => s + Number(c.saldo_actual), 0);
-  const tipoIconos = { efectivo: 'bi-cash', banco: 'bi-bank', tarjeta: 'bi-credit-card', ahorro: 'bi-piggy-bank', otro: 'bi-wallet2' };
+  const tipoIconos = { efectivo: 'bi-cash', banco: 'bi-bank', tarjeta: 'bi-credit-card-2-front', credito: 'bi-credit-card', ahorro: 'bi-piggy-bank', otro: 'bi-wallet2' };
 
   resumen.innerHTML = `
     <div class="col-12">
@@ -1184,17 +1193,25 @@ function renderCuentas() {
 
   container.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0">
     <thead><tr><th>Cuenta</th><th>Tipo</th><th>Saldo</th><th>Acciones</th></tr></thead>
-    <tbody>${cuentas.map(c => `
+    <tbody>${cuentas.map(c => {
+      const esCredito = c.tipo === 'credito';
+      const deuda = esCredito ? Math.abs(Number(c.saldo_actual)) : 0;
+      const disponible = esCredito ? Number(c.limite_credito) - deuda : 0;
+      const saldoDisplay = esCredito
+        ? `<span class="text-danger fw-bold">Deuda: ${formatMoney(deuda)}</span><br><small class="text-muted">Disponible: ${formatMoney(disponible)} / ${formatMoney(c.limite_credito)}</small>`
+        : `<span class="fw-bold ${Number(c.saldo_actual) >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(c.saldo_actual)}</span>`;
+      return `
       <tr>
         <td><i class="${tipoIconos[c.tipo] || 'bi-wallet2'} me-2 text-primary"></i><span class="fw-medium">${c.nombre}</span>${c.descripcion ? `<br><small class="text-muted">${c.descripcion}</small>` : ''}</td>
         <td><span class="badge rounded-pill bg-primary bg-opacity-10 text-primary text-uppercase">${c.tipo}</span></td>
-        <td class="fw-bold ${Number(c.saldo_actual) >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(c.saldo_actual)}</td>
-        <td>
+        <td>${saldoDisplay}</td>
+        <td class="text-nowrap">
+          ${esCredito ? `<button class="btn btn-sm btn-outline-success rounded-circle me-1" onclick="pagarCredito(${c.id_cuenta})" title="Pagar tarjeta"><i class="bi bi-cash"></i></button>` : ''}
           <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editarCuenta(${c.id_cuenta}, '${c.nombre.replace(/'/g, "\\'")}', '${c.tipo}', '${c.descripcion || ''}')" title="Editar"><i class="bi bi-pencil"></i></button>
           <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarCuenta(${c.id_cuenta})" title="Eliminar"><i class="bi bi-trash"></i></button>
         </td>
-      </tr>
-    `).join('')}</tbody>
+      </tr>`;
+    }).join('')}</tbody>
   </table></div>`;
 }
 
@@ -1226,6 +1243,28 @@ window.eliminarCuenta = async (id) => {
       loadCuentas();
       showToast('Cuenta eliminada', 'success');
     } catch (err) { showToast(err.error || 'Error al eliminar', 'danger'); }
+  }, 'Eliminar');
+};
+
+window.pagarCredito = async (idCredito) => {
+  // Cargar cuentas que NO sean crédito para pagar desde ellas
+  const cuentasDisponibles = cuentas.filter(c => c.tipo !== 'credito' && c.id_cuenta !== idCredito);
+  if (cuentasDisponibles.length === 0) { showToast('Necesitas una cuenta con saldo para pagar la tarjeta', 'warning'); return; }
+
+  const creditoInfo = cuentas.find(c => c.id_cuenta === idCredito);
+  const deuda = Math.abs(Number(creditoInfo.saldo_actual));
+
+  openModal(`Pagar tarjeta: ${creditoInfo.nombre}`, [
+    { name: 'id_cuenta_origen', label: 'Pagar desde', type: 'select', required: true, options: cuentasDisponibles.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) },
+    { name: 'monto', label: `Monto a pagar (Deuda: ${formatMoney(deuda)})`, type: 'number', required: true, step: '0.01', min: '0.01', value: deuda > 0 ? deuda : '', placeholder: '0.00' }
+  ], async (data) => {
+    try {
+      await request('/cuentas/pagar-credito', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario, id_cuenta_credito: idCredito }) });
+      closeModal();
+      loadCuentas();
+      loadDashboard();
+      showToast('Pago a tarjeta realizado', 'success');
+    } catch (err) { showToast(err.error || 'Error al pagar', 'danger'); }
   });
 };
 

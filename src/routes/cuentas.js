@@ -34,19 +34,29 @@ router.get('/usuario/:id_usuario/total', async (req, res) => {
 // Crear cuenta
 router.post('/', async (req, res) => {
   try {
-    const { id_usuario, nombre, tipo, saldo_inicial, descripcion } = req.body;
+    const { id_usuario, nombre, tipo, saldo_inicial, descripcion, limite_credito, fecha_corte, fecha_pago } = req.body;
 
     if (!id_usuario) return res.status(400).json({ error: 'El id_usuario es requerido' });
     if (!nombre || nombre.length === 0 || nombre.length > 100) return res.status(400).json({ error: 'El nombre debe tener entre 1 y 100 caracteres' });
-    if (!tipo || !['efectivo', 'banco', 'tarjeta', 'ahorro', 'otro'].includes(tipo)) {
-      return res.status(400).json({ error: 'El tipo debe ser: efectivo, banco, tarjeta, ahorro u otro' });
+    if (!tipo || !['efectivo', 'banco', 'tarjeta', 'credito', 'ahorro', 'otro'].includes(tipo)) {
+      return res.status(400).json({ error: 'El tipo debe ser: efectivo, banco, tarjeta, credito, ahorro u otro' });
     }
 
-    const saldo = saldo_inicial !== undefined && !isNaN(saldo_inicial) ? Number(saldo_inicial) : 0;
+    // Para tarjeta de credito: saldo inicia en 0 (deuda), se necesita limite
+    if (tipo === 'credito') {
+      if (!limite_credito || Number(limite_credito) <= 0) {
+        return res.status(400).json({ error: 'La tarjeta de crédito requiere un límite de crédito mayor a 0' });
+      }
+    }
+
+    const saldo = tipo === 'credito' ? 0 : (saldo_inicial !== undefined && !isNaN(saldo_inicial) ? Number(saldo_inicial) : 0);
+    const limCred = tipo === 'credito' && limite_credito ? Number(limite_credito) : null;
+    const fCorte = fecha_corte ? Number(fecha_corte) : null;
+    const fPago = fecha_pago ? Number(fecha_pago) : null;
 
     const resultado = await pool.query(
-      'INSERT INTO cuentas (id_usuario, nombre, tipo, saldo_inicial, saldo_actual, descripcion) VALUES ($1, $2, $3, $4, $4, $5) RETURNING id_cuenta',
-      [id_usuario, nombre, tipo, saldo, descripcion || null]
+      'INSERT INTO cuentas (id_usuario, nombre, tipo, saldo_inicial, saldo_actual, limite_credito, fecha_corte, fecha_pago, descripcion) VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8) RETURNING id_cuenta',
+      [id_usuario, nombre, tipo, saldo, limCred, fCorte, fPago, descripcion || null]
     );
 
     res.status(201).json({ id_cuenta: resultado.rows[0].id_cuenta, nombre, tipo, saldo_actual: saldo });
@@ -101,6 +111,47 @@ router.delete('/:id', async (req, res) => {
     res.json({ mensaje: 'Cuenta eliminada' });
   } catch (error) {
     console.error('Error al eliminar cuenta:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Pagar tarjeta de credito desde otra cuenta
+router.post('/pagar-credito', async (req, res) => {
+  try {
+    const { id_usuario, id_cuenta_credito, id_cuenta_origen, monto } = req.body;
+
+    if (!id_usuario || !id_cuenta_credito || !id_cuenta_origen || !monto) {
+      return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
+    if (Number(monto) <= 0) return res.status(400).json({ error: 'El monto debe ser mayor a 0' });
+    if (Number(id_cuenta_credito) === Number(id_cuenta_origen)) {
+      return res.status(400).json({ error: 'No puedes pagar con la misma tarjeta' });
+    }
+
+    // Verificar tarjeta de credito
+    const credito = await pool.query('SELECT * FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2 AND tipo = $3', [id_cuenta_credito, id_usuario, 'credito']);
+    if (credito.rows.length === 0) return res.status(400).json({ error: 'Tarjeta de crédito no encontrada' });
+
+    // Verificar cuenta origen tiene saldo
+    const origen = await pool.query('SELECT * FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2', [id_cuenta_origen, id_usuario]);
+    if (origen.rows.length === 0) return res.status(400).json({ error: 'Cuenta de origen no encontrada' });
+    if (Number(origen.rows[0].saldo_actual) < Number(monto)) {
+      return res.status(400).json({ error: 'Saldo insuficiente en la cuenta de origen' });
+    }
+
+    // Verificar que no pague más de la deuda
+    const deuda = Math.abs(Number(credito.rows[0].saldo_actual));
+    if (Number(monto) > deuda) {
+      return res.status(400).json({ error: `La deuda actual es $${deuda.toFixed(2)}. No puedes pagar más de eso.` });
+    }
+
+    // Ejecutar pago: descontar de origen, aumentar saldo de credito (reduce deuda)
+    await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [monto, id_cuenta_origen]);
+    await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual + $1 WHERE id_cuenta = $2', [monto, id_cuenta_credito]);
+
+    res.json({ mensaje: 'Pago a tarjeta de crédito realizado' });
+  } catch (error) {
+    console.error('Error al pagar credito:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

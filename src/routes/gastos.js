@@ -70,13 +70,26 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Debes seleccionar una cuenta para registrar el gasto' });
     }
 
-    // Verificar saldo suficiente en la cuenta
-    const cuentaResult = await pool.query('SELECT saldo_actual FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2', [id_cuenta, id_usuario]);
+    // Verificar cuenta y saldo/credito
+    const cuentaResult = await pool.query('SELECT saldo_actual, tipo, limite_credito FROM cuentas WHERE id_cuenta = $1 AND id_usuario = $2', [id_cuenta, id_usuario]);
     if (cuentaResult.rows.length === 0) {
       return res.status(400).json({ error: 'La cuenta seleccionada no es valida' });
     }
-    if (Number(cuentaResult.rows[0].saldo_actual) < Number(monto)) {
-      return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
+
+    const cuenta = cuentaResult.rows[0];
+    if (cuenta.tipo === 'credito') {
+      // Tarjeta de crédito: saldo_actual es la deuda (negativo o cero)
+      // Crédito disponible = limite - deuda (donde deuda = valor absoluto de saldo_actual negativo)
+      const deudaActual = Math.abs(Number(cuenta.saldo_actual));
+      const disponible = Number(cuenta.limite_credito) - deudaActual;
+      if (Number(monto) > disponible) {
+        return res.status(400).json({ error: `Crédito insuficiente. Disponible: $${disponible.toFixed(2)}` });
+      }
+    } else {
+      // Cuenta normal: verificar saldo suficiente
+      if (Number(cuenta.saldo_actual) < Number(monto)) {
+        return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
+      }
     }
 
     const resultado = await pool.query(
