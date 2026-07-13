@@ -65,12 +65,13 @@ function createToastContainer() {
 }
 
 // ===== CONFIRM DIALOG =====
-function showConfirm(message, onConfirm) {
+function showConfirm(message, onConfirm, confirmText) {
   const modal = document.getElementById('confirmModal') || createConfirmModal();
   const bsConfirm = bootstrap.Modal.getOrCreateInstance(modal);
   modal.querySelector('.confirm-message').textContent = message;
   const btnConfirm = modal.querySelector('.btn-confirm-yes');
   const newBtn = btnConfirm.cloneNode(true);
+  newBtn.textContent = confirmText || 'Confirmar';
   btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
   newBtn.addEventListener('click', () => { bsConfirm.hide(); onConfirm(); });
   bsConfirm.show();
@@ -90,7 +91,7 @@ function createConfirmModal() {
         </div>
         <div class="modal-footer justify-content-center border-0 pt-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-danger btn-confirm-yes">Eliminar</button>
+          <button type="button" class="btn btn-danger btn-confirm-yes">Confirmar</button>
         </div>
       </div>
     </div>`;
@@ -2211,7 +2212,7 @@ window.cambiarRol = async (id, rol) => {
       showToast('Rol actualizado', 'success');
       loadAdminUsuarios();
     } catch (err) { showToast(err.error || 'Error', 'danger'); }
-  });
+  }, 'Confirmar');
 };
 
 window.eliminarUsuarioAdmin = async (id) => {
@@ -2222,7 +2223,7 @@ window.eliminarUsuarioAdmin = async (id) => {
       loadAdminUsuarios();
       loadAdminDashboard();
     } catch (err) { showToast(err.error || 'Error', 'danger'); }
-  });
+  }, 'Eliminar');
 };
 
 window.resetPasswordAdmin = (id, nombre) => {
