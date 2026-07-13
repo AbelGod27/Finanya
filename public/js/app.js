@@ -1762,6 +1762,7 @@ async function loadPresupuestos() {
             </div>
             ${p.porcentaje_uso >= 100 ? '<div class="alert alert-danger py-1 px-2 small mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Presupuesto excedido</div>' : ''}
             ${p.porcentaje_uso >= 80 && p.porcentaje_uso < 100 ? '<div class="alert alert-warning py-1 px-2 small mb-2"><i class="bi bi-exclamation-circle-fill me-1"></i>Cerca del límite</div>' : ''}
+            ${p.monto_gastado === 0 ? '<div class="alert alert-info py-1 px-2 small mb-2"><i class="bi bi-info-circle me-1"></i>Registra un gasto en <strong>' + p.categoria_nombre + '</strong> para ver el progreso</div>' : ''}
             <div class="progress mb-2" style="height: 10px;">
               <div class="progress-bar ${barColor}" style="width: ${pct}%"></div>
             </div>
