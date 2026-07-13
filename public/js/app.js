@@ -1241,7 +1241,6 @@ function renderCuentas() {
         <td><span class="badge rounded-pill bg-primary bg-opacity-10 text-primary text-uppercase">${c.tipo}</span></td>
         <td>${saldoDisplay}</td>
         <td class="text-nowrap">
-          ${esCredito ? `<button class="btn btn-sm btn-outline-success rounded-circle me-1" onclick="pagarCredito(${c.id_cuenta})" title="Pagar tarjeta"><i class="bi bi-cash"></i></button>` : ''}
           <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" onclick="editarCuenta(${c.id_cuenta}, '${c.nombre.replace(/'/g, "\\'")}', '${c.tipo}', '${c.descripcion || ''}')" title="Editar"><i class="bi bi-pencil"></i></button>
           <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarCuenta(${c.id_cuenta})" title="Eliminar"><i class="bi bi-trash"></i></button>
         </td>
