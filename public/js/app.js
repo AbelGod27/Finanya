@@ -1376,18 +1376,18 @@ async function loadMetas() {
 window.aportarMeta = async (id) => {
   let userCuentas = [];
   try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
-  const cuentaOpts = [{ value: '', label: 'Sin cuenta (manual)' }, ...userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` }))];
+  if (userCuentas.length === 0) { showToast('Necesitas al menos una cuenta para hacer un aporte', 'warning'); return; }
 
   openModal('Registrar Aporte', [
     { name: 'monto', label: 'Monto del aporte', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
-    { name: 'id_cuenta', label: 'Descontar de cuenta', type: 'select', options: cuentaOpts },
+    { name: 'id_cuenta', label: 'Descontar de cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) },
     { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Aporte quincenal' }
   ], async (data) => {
     try {
-      if (!data.id_cuenta) delete data.id_cuenta;
       await request(`/metas/${id}/aportes`, { method: 'POST', body: JSON.stringify(data) });
       closeModal();
       loadMetas();
+      loadCuentas();
       loadDashboard();
       showToast('Aporte registrado', 'success');
     } catch (err) { showToast(err.error || 'Error al registrar aporte', 'danger'); }

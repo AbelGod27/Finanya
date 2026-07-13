@@ -174,17 +174,20 @@ router.post('/:id/aportes', async (req, res) => {
       return res.status(400).json({ error: 'La descripción no debe exceder 200 caracteres' });
     }
 
-    // Si se especifica cuenta, verificar saldo y descontar
-    if (id_cuenta) {
-      const cuentaResult = await pool.query('SELECT saldo_actual FROM cuentas WHERE id_cuenta = $1', [id_cuenta]);
-      if (cuentaResult.rows.length === 0) {
-        return res.status(400).json({ error: 'Cuenta no encontrada' });
-      }
-      if (Number(cuentaResult.rows[0].saldo_actual) < Number(monto)) {
-        return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
-      }
-      await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
+    // La cuenta es obligatoria para descontar el aporte
+    if (!id_cuenta) {
+      return res.status(400).json({ error: 'Debes seleccionar una cuenta de donde descontar el aporte' });
     }
+
+    // Verificar saldo y descontar
+    const cuentaResult = await pool.query('SELECT saldo_actual FROM cuentas WHERE id_cuenta = $1', [id_cuenta]);
+    if (cuentaResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Cuenta no encontrada' });
+    }
+    if (Number(cuentaResult.rows[0].saldo_actual) < Number(monto)) {
+      return res.status(400).json({ error: 'Saldo insuficiente en la cuenta seleccionada' });
+    }
+    await pool.query('UPDATE cuentas SET saldo_actual = saldo_actual - $1 WHERE id_cuenta = $2', [monto, id_cuenta]);
 
     const fecha = new Date().toISOString().split('T')[0];
 
