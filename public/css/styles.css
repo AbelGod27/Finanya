@@ -799,7 +799,8 @@ select.form-select option:checked {
   transition: var(--transition);
   z-index: 1000;
 }
-.chat-fab:hover { transform: scale(1.1); box-shadow: var(--shadow-primary); }
+.chat-fab:hover { transform: scale(1.1); box-shadow: var(--shadow-primary); cursor: grab; }
+.chat-fab:active { cursor: grabbing; }
 
 .chat-badge {
   position: absolute;

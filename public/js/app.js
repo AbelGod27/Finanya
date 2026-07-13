@@ -1975,13 +1975,107 @@ async function checkNewMessages() {
   } catch (e) {}
 }
 
-$('#btn-open-chat').addEventListener('click', () => {
-  $('#chat-panel').classList.toggle('d-none');
-  if (!$('#chat-panel').classList.contains('d-none')) {
-    loadChatMessages();
-    markMessagesRead();
-  }
-});
+// ===== CHAT DRAGGABLE =====
+(function() {
+  const fab = document.getElementById('btn-open-chat');
+  let isDragging = false;
+  let startX, startY, startLeft, startTop;
+
+  fab.addEventListener('touchstart', (e) => {
+    isDragging = false;
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    const rect = fab.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop = rect.top;
+  });
+
+  fab.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      isDragging = true;
+      fab.style.position = 'fixed';
+      fab.style.left = (startLeft + dx) + 'px';
+      fab.style.top = (startTop + dy) + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      e.preventDefault();
+    }
+  });
+
+  fab.addEventListener('touchend', () => {
+    if (isDragging) {
+      // Snap to nearest edge
+      const rect = fab.getBoundingClientRect();
+      const midX = window.innerWidth / 2;
+      if (rect.left + rect.width / 2 < midX) {
+        fab.style.left = '16px';
+        fab.style.right = 'auto';
+      } else {
+        fab.style.left = 'auto';
+        fab.style.right = '16px';
+      }
+      // Keep within bounds
+      const top = Math.max(60, Math.min(window.innerHeight - 70, rect.top));
+      fab.style.top = top + 'px';
+      fab.style.bottom = 'auto';
+    }
+  });
+
+  fab.addEventListener('click', (e) => {
+    if (isDragging) { e.preventDefault(); e.stopPropagation(); isDragging = false; return; }
+    $('#chat-panel').classList.toggle('d-none');
+    if (!$('#chat-panel').classList.contains('d-none')) {
+      loadChatMessages();
+      markMessagesRead();
+    }
+  });
+
+  // Mouse drag for desktop
+  fab.addEventListener('mousedown', (e) => {
+    isDragging = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = fab.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop = rect.top;
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        isDragging = true;
+        fab.style.position = 'fixed';
+        fab.style.left = (startLeft + dx) + 'px';
+        fab.style.top = (startTop + dy) + 'px';
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+      }
+    };
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (isDragging) {
+        const rect = fab.getBoundingClientRect();
+        const midX = window.innerWidth / 2;
+        if (rect.left + rect.width / 2 < midX) {
+          fab.style.left = '16px'; fab.style.right = 'auto';
+        } else {
+          fab.style.left = 'auto'; fab.style.right = '16px';
+        }
+        const top = Math.max(60, Math.min(window.innerHeight - 70, rect.top));
+        fab.style.top = top + 'px'; fab.style.bottom = 'auto';
+      }
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
 
 $('#btn-close-chat').addEventListener('click', () => {
   $('#chat-panel').classList.add('d-none');
