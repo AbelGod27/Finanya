@@ -1161,29 +1161,26 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
   });
 
   // Agregar campos condicionales de crédito
-  setTimeout(() => {
+  $('#appModal').addEventListener('shown.bs.modal', function handler() {
+    $('#appModal').removeEventListener('shown.bs.modal', handler);
     const body = $('#modal-body');
     const tipoSelect = body.querySelector('select[name="tipo"]');
     if (!tipoSelect) return;
 
-    // Crear contenedor de opciones de crédito
     const creditoDiv = document.createElement('div');
     creditoDiv.id = 'credito-fields';
-    creditoDiv.className = 'd-none';
+    creditoDiv.style.display = 'none';
     creditoDiv.innerHTML = `
       <div class="mb-3"><label class="form-label">Límite de crédito</label><input type="number" class="form-control" name="limite_credito" step="0.01" min="0" placeholder="Ej: 10000"></div>
       <div class="mb-3"><label class="form-label">Día de corte (1-31)</label><input type="number" class="form-control" name="fecha_corte" min="1" max="31" placeholder="Ej: 15"></div>
       <div class="mb-3"><label class="form-label">Día de pago (1-31)</label><input type="number" class="form-control" name="fecha_pago" min="1" max="31" placeholder="Ej: 5"></div>
     `;
-
-    // Insertar después del select de tipo
     tipoSelect.closest('.mb-3').after(creditoDiv);
 
-    // Toggle al cambiar tipo
     tipoSelect.addEventListener('change', () => {
-      creditoDiv.classList.toggle('d-none', tipoSelect.value !== 'credito');
+      creditoDiv.style.display = tipoSelect.value === 'credito' ? 'block' : 'none';
     });
-  }, 50);
+  });
 });
 
 async function loadCuentas() {
