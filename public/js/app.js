@@ -909,7 +909,7 @@ $('#btn-nuevo-ingreso').addEventListener('click', async () => {
 
   openModal('Nuevo Ingreso', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
-    { name: 'descripcion', label: 'Descripción', required: true, placeholder: 'Ej: Salario mensual' },
+    { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Salario mensual' },
     { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: new Date().toISOString().split('T')[0] },
     { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catIngresos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
     { name: 'id_cuenta', label: 'Cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) }
@@ -964,7 +964,7 @@ window.deleteIngreso = async (id) => {
 window.editIngreso = (id, descripcion, monto, fecha) => {
   openModal('Editar Ingreso', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', value: monto },
-    { name: 'descripcion', label: 'Descripción', required: true, value: descripcion },
+    { name: 'descripcion', label: 'Descripción (opcional)', value: descripcion },
     { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: fecha.split('T')[0] }
   ], async (data) => {
     try {
@@ -987,7 +987,7 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
 
   openModal('Nuevo Gasto', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
-    { name: 'descripcion', label: 'Descripción', required: true, placeholder: 'Ej: Supermercado' },
+    { name: 'descripcion', label: 'Descripción (opcional)', placeholder: 'Ej: Supermercado' },
     { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: new Date().toISOString().split('T')[0] },
     { name: 'metodo_pago', label: 'Método de pago', type: 'select', required: true, options: [
       { value: 'Efectivo', label: 'Efectivo', selected: true },
@@ -1050,7 +1050,7 @@ window.deleteGasto = async (id) => {
 window.editGasto = (id, descripcion, monto, fecha, metodo_pago) => {
   openModal('Editar Gasto', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', value: monto },
-    { name: 'descripcion', label: 'Descripción', required: true, value: descripcion },
+    { name: 'descripcion', label: 'Descripción (opcional)', value: descripcion },
     { name: 'fecha', label: 'Fecha', type: 'date', required: true, value: fecha.split('T')[0] },
     { name: 'metodo_pago', label: 'Método de pago', type: 'select', required: true, options: [
       { value: 'Efectivo', label: 'Efectivo', selected: metodo_pago === 'Efectivo' },
@@ -2494,3 +2494,4 @@ if (saved && savedToken) {
     $('#landing-container').classList.remove('d-none');
   }
 }
+

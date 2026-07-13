@@ -44,8 +44,8 @@ router.post('/', async (req, res) => {
     if (!monto || isNaN(monto) || monto <= 0 || monto > 999999999.99) {
       return res.status(400).json({ error: 'El monto debe ser un número entre 0.01 y 999,999,999.99' });
     }
-    if (!descripcion || descripcion.length > 255) {
-      return res.status(400).json({ error: 'La descripción es requerida y no debe exceder 255 caracteres' });
+    if (descripcion && descripcion.length > 255) {
+      return res.status(400).json({ error: 'La descripción no debe exceder 255 caracteres' });
     }
     if (!fecha) {
       return res.status(400).json({ error: 'La fecha es requerida' });
@@ -101,8 +101,8 @@ router.put('/:id', async (req, res) => {
     if (monto !== undefined && (isNaN(monto) || monto <= 0 || monto > 999999999.99)) {
       return res.status(400).json({ error: 'El monto debe ser un número entre 0.01 y 999,999,999.99' });
     }
-    if (descripcion !== undefined && (descripcion.length === 0 || descripcion.length > 255)) {
-      return res.status(400).json({ error: 'La descripción no debe estar vacía ni exceder 255 caracteres' });
+    if (descripcion !== undefined && descripcion.length > 255) {
+      return res.status(400).json({ error: 'La descripción no debe exceder 255 caracteres' });
     }
 
     if (id_categoria !== undefined) {
