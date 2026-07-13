@@ -75,14 +75,25 @@ router.put('/:id', async (req, res) => {
     const resultado = await pool.query('SELECT * FROM cuentas WHERE id_cuenta = $1', [id_cuenta]);
     if (resultado.rows.length === 0) return res.status(404).json({ error: 'Cuenta no encontrada' });
 
+    const cuenta = resultado.rows[0];
+
     if (nombre !== undefined && (nombre.length === 0 || nombre.length > 100)) {
       return res.status(400).json({ error: 'El nombre debe tener entre 1 y 100 caracteres' });
     }
-    if (tipo !== undefined && !['efectivo', 'banco', 'tarjeta', 'ahorro', 'otro'].includes(tipo)) {
+    if (tipo !== undefined && !['efectivo', 'banco', 'tarjeta', 'credito', 'ahorro', 'otro'].includes(tipo)) {
       return res.status(400).json({ error: 'Tipo invalido' });
     }
 
-    const cuenta = resultado.rows[0];
+    // No permitir cambiar tipo si es tarjeta de crédito con deuda
+    if (cuenta.tipo === 'credito' && tipo && tipo !== 'credito' && Number(cuenta.saldo_actual) < 0) {
+      return res.status(400).json({ error: 'No puedes cambiar el tipo de una tarjeta de crédito con deuda pendiente. Paga la deuda primero.' });
+    }
+
+    // No permitir cambiar a crédito si tiene saldo positivo (no tendría sentido)
+    if (tipo === 'credito' && cuenta.tipo !== 'credito' && Number(cuenta.saldo_actual) > 0) {
+      return res.status(400).json({ error: 'No puedes convertir una cuenta con saldo a tarjeta de crédito.' });
+    }
+
     const nuevoNombre = nombre || cuenta.nombre;
     const nuevoTipo = tipo || cuenta.tipo;
     const nuevaDesc = descripcion !== undefined ? descripcion : cuenta.descripcion;
