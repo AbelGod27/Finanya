@@ -1142,7 +1142,6 @@ $('#btn-nueva-cuenta').addEventListener('click', () => {
       { value: 'ahorro', label: 'Ahorro' },
       { value: 'otro', label: 'Otro' }
     ]},
-    { name: 'saldo_inicial', label: 'Saldo inicial', type: 'number', required: true, step: '0.01', min: '0', value: '0', placeholder: '0.00' },
     { name: '_separator', label: '<a href="#" class="small text-primary" onclick="document.getElementById(\'cuenta-credito-opts\').classList.toggle(\'d-none\'); return false;"><i class="bi bi-credit-card me-1"></i>Opciones de tarjeta de crédito</a>', type: 'html' },
     { name: 'limite_credito', label: 'Límite de crédito', type: 'number', step: '0.01', min: '0', placeholder: 'Ej: 10000', wrapper: 'cuenta-credito-opts', hidden: true },
     { name: 'fecha_corte', label: 'Día de corte (1-31)', type: 'number', min: '1', placeholder: 'Ej: 15', wrapper: 'cuenta-credito-opts', hidden: true },

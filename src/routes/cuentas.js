@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const saldo = tipo === 'credito' ? 0 : (saldo_inicial !== undefined && !isNaN(saldo_inicial) ? Number(saldo_inicial) : 0);
+    const saldo = 0; // Siempre empieza en 0, el dinero debe entrar via ingresos
     const limCred = tipo === 'credito' && limite_credito ? Number(limite_credito) : null;
     const fCorte = fecha_corte ? Number(fecha_corte) : null;
     const fPago = fecha_pago ? Number(fecha_pago) : null;
