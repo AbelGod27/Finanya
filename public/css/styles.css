@@ -134,6 +134,10 @@ body {
   outline: none;
 }
 .form-control::placeholder { color: var(--text-light); }
+.form-select option {
+  background: var(--bg-card);
+  color: var(--text);
+}
 
 /* ===== CUSTOM SELECT (reemplaza <select> nativo) ===== */
 .custom-select-wrapper {
