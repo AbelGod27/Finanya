@@ -522,9 +522,11 @@ select.form-select option:checked {
   box-shadow: var(--shadow-xs);
   transition: var(--transition);
   height: 100%;
+  overflow: hidden;
 }
 .insight-card:hover { box-shadow: var(--shadow-sm); }
 .insight-card i { font-size: 1.4rem; flex-shrink: 0; }
+.insight-card .min-width-0 { min-width: 0; flex: 1; }
 
 /* ===== MODAL ===== */
 .modal-content {
