@@ -1360,19 +1360,23 @@ async function loadTransferencias() {
       return;
     }
     container.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0">
-      <thead><tr><th>Fecha</th><th>Origen</th><th>Destino</th><th>Monto</th><th>Descripción</th><th>Acciones</th></tr></thead>
-      <tbody>${transferencias.map(t => `
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Origen</th><th>Destino</th><th>Monto</th><th>Acciones</th></tr></thead>
+      <tbody>${transferencias.map(t => {
+        const origen = t.cuenta_origen_nombre || t.meta_origen_nombre || '-';
+        const destino = t.cuenta_destino_nombre || t.meta_destino_nombre || '-';
+        const tipoLabel = { entre_cuentas: 'Cuentas', cuenta_a_meta: 'Cuenta→Meta', meta_a_cuenta: 'Meta→Cuenta', meta_a_meta: 'Meta→Meta' };
+        return `
         <tr>
           <td>${formatFecha(t.fecha)}</td>
-          <td><span class="badge bg-danger bg-opacity-10 text-danger">${t.cuenta_origen_nombre}</span></td>
-          <td><span class="badge bg-success bg-opacity-10 text-success">${t.cuenta_destino_nombre}</span></td>
+          <td><span class="badge bg-primary bg-opacity-10 text-primary small">${tipoLabel[t.tipo] || t.tipo || 'Cuentas'}</span></td>
+          <td><span class="badge bg-danger bg-opacity-10 text-danger">${origen}</span></td>
+          <td><span class="badge bg-success bg-opacity-10 text-success">${destino}</span></td>
           <td class="fw-bold text-primary">${formatMoney(t.monto)}</td>
-          <td class="small text-muted">${t.descripcion || '-'}</td>
           <td>
             <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="eliminarTransferencia(${t.id_transferencia})" title="Eliminar y revertir"><i class="bi bi-trash"></i></button>
           </td>
-        </tr>
-      `).join('')}</tbody>
+        </tr>`;
+      }).join('')}</tbody>
     </table></div>`;
   } catch (err) { console.error('Error cargando transferencias:', err); }
 }
