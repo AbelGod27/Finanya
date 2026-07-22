@@ -1,4 +1,4 @@
-const API = '/api';
+﻿const API = '/api';
 let currentUser = null;
 let bsModal = null;
 
@@ -1407,6 +1407,7 @@ $('#btn-cuenta-a-meta').addEventListener('click', async () => {
       closeModal();
       loadCuentas();
       loadMetas();
+      loadTransferencias();
       loadDashboard();
       showToast('Transferencia realizada', 'success');
     } catch (err) { showToast(err.error || 'Error', 'danger'); }
@@ -1431,6 +1432,7 @@ $('#btn-meta-a-cuenta').addEventListener('click', async () => {
       closeModal();
       loadCuentas();
       loadMetas();
+      loadTransferencias();
       loadDashboard();
       showToast('Retiro realizado', 'success');
     } catch (err) { showToast(err.error || 'Error', 'danger'); }
@@ -1453,6 +1455,7 @@ $('#btn-meta-a-meta').addEventListener('click', async () => {
       await request('/transferencias/meta-a-meta', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
       closeModal();
       loadMetas();
+      loadTransferencias();
       loadDashboard();
       showToast('Transferencia entre metas realizada', 'success');
     } catch (err) { showToast(err.error || 'Error', 'danger'); }
