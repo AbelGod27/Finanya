@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "finanya-android",
+			"path": "../Finanya-android/finanya-android"
+		}
+	],
+	"settings": {
+	}
+}

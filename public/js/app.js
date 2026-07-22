@@ -1,4 +1,4 @@
-﻿const API = '/api';
+const API = '/api';
 let currentUser = null;
 let bsModal = null;
 
@@ -30,6 +30,13 @@ async function request(path, options = {}) {
 
 function formatMoney(n) {
   return `$${Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatFecha(fecha) {
+  if (!fecha) return '-';
+  const str = fecha.toString().split('T')[0];
+  const [y, m, d] = str.split('-');
+  return `${d}/${m}/${y}`;
 }
 
 function showError(elementId, msg) {
@@ -626,7 +633,7 @@ async function loadDashboard() {
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <div>
             <div class="fw-medium small">${i.descripcion}</div>
-            <small class="text-muted">${new Date(i.fecha).toLocaleDateString('es-MX')} · ${i.categoria_nombre || ''}</small>
+            <small class="text-muted">${formatFecha(i.fecha)} · ${i.categoria_nombre || ''}</small>
           </div>
           <span class="fw-bold text-success small">+${formatMoney(i.monto)}</span>
         </div>
@@ -641,7 +648,7 @@ async function loadDashboard() {
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <div>
             <div class="fw-medium small">${g.descripcion}</div>
-            <small class="text-muted">${new Date(g.fecha).toLocaleDateString('es-MX')} · ${g.categoria_nombre || ''}</small>
+            <small class="text-muted">${formatFecha(g.fecha)} · ${g.categoria_nombre || ''}</small>
           </div>
           <span class="fw-bold text-danger small">-${formatMoney(g.monto)}</span>
         </div>
@@ -960,7 +967,7 @@ function renderIngresosTable() {
     </tr></thead>
     <tbody>${sorted.map(i => `
       <tr>
-        <td>${new Date(i.fecha).toLocaleDateString('es-MX')}</td>
+        <td>${formatFecha(i.fecha)}</td>
         <td>${i.descripcion || '-'}</td>
         <td><span class="badge bg-success">${i.categoria_nombre}</span></td>
         <td class="mov-ingreso fw-bold">${formatMoney(i.monto)}</td>
@@ -1074,7 +1081,7 @@ function renderGastosTable() {
     </tr></thead>
     <tbody>${sorted.map(g => `
       <tr>
-        <td>${new Date(g.fecha).toLocaleDateString('es-MX')}</td>
+        <td>${formatFecha(g.fecha)}</td>
         <td>${g.descripcion || '-'}</td>
         <td><span class="badge bg-danger">${g.categoria_nombre}</span></td>
         <td>${g.metodo_pago}</td>
@@ -1356,7 +1363,7 @@ async function loadTransferencias() {
       <thead><tr><th>Fecha</th><th>Origen</th><th>Destino</th><th>Monto</th><th>Descripción</th><th>Acciones</th></tr></thead>
       <tbody>${transferencias.map(t => `
         <tr>
-          <td>${new Date(t.fecha).toLocaleDateString('es-MX')}</td>
+          <td>${formatFecha(t.fecha)}</td>
           <td><span class="badge bg-danger bg-opacity-10 text-danger">${t.cuenta_origen_nombre}</span></td>
           <td><span class="badge bg-success bg-opacity-10 text-success">${t.cuenta_destino_nombre}</span></td>
           <td class="fw-bold text-primary">${formatMoney(t.monto)}</td>
@@ -1507,7 +1514,7 @@ async function loadMetas() {
               </div>
               <small class="text-muted">Sin monto objetivo definido</small>
             `}
-            ${m.fecha_limite ? `<small class="d-block text-muted mt-1"><i class="bi bi-calendar3 me-1"></i>Límite: ${new Date(m.fecha_limite).toLocaleDateString('es-MX')}</small>` : ''}
+            ${m.fecha_limite ? `<small class="d-block text-muted mt-1"><i class="bi bi-calendar3 me-1"></i>Límite: ${formatFecha(m.fecha_limite)}</small>` : ''}
             <div class="mt-3 d-flex gap-2 flex-wrap">
               <button class="btn btn-sm btn-outline-primary" onclick="aportarMeta(${m.id_meta})"><i class="bi bi-plus"></i> Aporte</button>
               <button class="btn btn-sm btn-outline-secondary" onclick="editarMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}', ${m.monto_objetivo || 0}, ${m.monto_actual})"><i class="bi bi-pencil"></i> Editar</button>
@@ -1866,7 +1873,7 @@ async function loadPerfil() {
     $('#profile-name-display').textContent = perfil.nombre;
     $('#profile-email-display').textContent = perfil.correo;
     $('#profile-nombre').value = perfil.nombre;
-    $('#profile-date').textContent = new Date(perfil.fecha_registro).toLocaleDateString('es-MX');
+    $('#profile-date').textContent = formatFecha(perfil.fecha_registro);
 
     if (perfil.avatar_url) {
       $('#profile-avatar-img').src = perfil.avatar_url;
@@ -2168,7 +2175,7 @@ async function loadAdminDashboard() {
       ? data.actividad_reciente.map(a => `
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
           <div><small class="fw-medium">${a.nombre}</small><br><small class="text-muted">${a.accion} - ${a.detalle || ''}</small></div>
-          <small class="text-muted text-nowrap">${new Date(a.fecha).toLocaleDateString('es-MX')}</small>
+          <small class="text-muted text-nowrap">${formatFecha(a.fecha)}</small>
         </div>`).join('')
       : '<p class="text-muted text-center small">Sin actividad</p>';
   } catch (err) { console.error('Error cargando admin dashboard:', err); }
@@ -2276,7 +2283,7 @@ async function loadAdminUsuarios() {
               <td><span class="badge rounded-pill ${u.rol === 'admin' ? 'bg-warning text-dark' : 'bg-secondary bg-opacity-10 text-secondary'} text-uppercase">${u.rol}</span></td>
               <td><span class="badge rounded-pill ${u.activo ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${u.activo ? 'text-success' : 'text-danger'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
               <td class="small">${u.num_ingresos}I / ${u.num_gastos}G</td>
-              <td class="small">${u.ultimo_acceso ? new Date(u.ultimo_acceso).toLocaleDateString('es-MX') : '-'}</td>
+              <td class="small">${u.ultimo_acceso ? formatFecha(u.ultimo_acceso) : '-'}</td>
               <td>
                 <div class="d-flex gap-1">
                   <button class="btn btn-sm btn-outline-${u.activo ? 'warning' : 'success'} rounded-circle" onclick="toggleUsuario(${u.id_usuario}, ${!u.activo})" title="${u.activo ? 'Desactivar' : 'Activar'}"><i class="bi bi-${u.activo ? 'pause' : 'play'}"></i></button>
