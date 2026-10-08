@@ -1655,13 +1655,8 @@ async function loadMetas() {
             <div class="mt-3 d-flex gap-2 flex-wrap">
               <button class="btn btn-sm btn-outline-primary" onclick="aportarMeta(${m.id_meta})"><i class="bi bi-plus"></i> Aporte</button>
               <button class="btn btn-sm btn-outline-secondary" onclick="editarMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}', ${m.monto_objetivo || 0}, ${m.monto_actual})"><i class="bi bi-pencil"></i> Editar</button>
+              <button class="btn btn-sm btn-outline-info" onclick="verMovimientosMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}')"><i class="bi bi-clock-history"></i> Movimientos</button>
               <button class="btn btn-sm btn-outline-danger" onclick="deleteMeta(${m.id_meta})"><i class="bi bi-trash"></i></button>
-            </div>
-            <div class="mt-3">
-              <button class="btn btn-sm btn-link text-muted p-0 w-100 text-start" onclick="toggleMovimientosMeta(${m.id_meta}, this)">
-                <i class="bi bi-clock-history me-1"></i>Ver movimientos <i class="bi bi-chevron-down ms-1 toggle-icon"></i>
-              </button>
-              <div id="movimientos-meta-${m.id_meta}" class="mt-2" style="display:none;"></div>
             </div>
           </div>
         </div>
@@ -1670,45 +1665,56 @@ async function loadMetas() {
   } catch (err) { console.error('Error cargando metas:', err); }
 }
 
-window.toggleMovimientosMeta = async (id, btn) => {
-  const panel = $(`#movimientos-meta-${id}`);
-  const icon = btn.querySelector('.toggle-icon');
-  const visible = panel.style.display !== 'none';
+window.verMovimientosMeta = async (id, nombre) => {
+  const titleEl = $('#mov-meta-title');
+  const subEl = $('#mov-meta-subtitulo');
+  const bodyEl = $('#mov-meta-body');
+  const footerLabel = $('#mov-meta-total-label');
 
-  if (visible) {
-    panel.style.display = 'none';
-    icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
-    return;
-  }
+  titleEl.textContent = nombre;
+  subEl.textContent = '';
+  bodyEl.innerHTML = '<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>';
+  footerLabel.textContent = '';
 
-  // Mostrar spinner mientras carga
-  panel.style.display = 'block';
-  icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
-  panel.innerHTML = '<p class="text-muted small text-center py-2"><span class="spinner-border spinner-border-sm me-1"></span>Cargando...</p>';
+  bootstrap.Modal.getOrCreateInstance($('#movimientosMetaModal')).show();
 
   try {
     const meta = await request(`/metas/${id}`);
     const aportes = meta.aportes || [];
+    const totalAportado = aportes.reduce((s, a) => s + Number(a.monto), 0);
+
+    subEl.textContent = `${aportes.length} movimiento${aportes.length !== 1 ? 's' : ''}`;
+    footerLabel.innerHTML = `Total aportado: <strong class="text-success">${formatMoney(totalAportado)}</strong>`;
 
     if (aportes.length === 0) {
-      panel.innerHTML = '<p class="text-muted small text-center fst-italic py-2">Sin movimientos registrados</p>';
+      bodyEl.innerHTML = `
+        <div class="text-center py-5">
+          <i class="bi bi-inbox text-muted" style="font-size:2.5rem;"></i>
+          <p class="text-muted mt-3 fst-italic">Sin movimientos registrados en esta meta.</p>
+        </div>`;
       return;
     }
 
-    panel.innerHTML = `
-      <div class="list-group list-group-flush" style="max-height:220px;overflow-y:auto;border-radius:8px;">
-        ${aportes.map(a => `
-          <div class="list-group-item px-2 py-2 d-flex justify-content-between align-items-start gap-2" style="font-size:0.82rem;">
-            <div>
-              <div class="fw-medium">${a.descripcion || '<span class="text-muted fst-italic">Sin descripción</span>'}</div>
-              <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>${formatFecha(a.fecha)}</small>
+    bodyEl.innerHTML = `
+      <div class="list-group list-group-flush">
+        ${aportes.map((a, idx) => `
+          <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-start gap-3">
+            <div class="d-flex align-items-start gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                   style="width:38px;height:38px;background:var(--success-soft, rgba(16,185,129,0.12));">
+                <i class="bi bi-arrow-down-circle text-success"></i>
+              </div>
+              <div>
+                <div class="fw-medium">${a.descripcion || '<span class="text-muted fst-italic">Sin descripción</span>'}</div>
+                <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>${formatFecha(a.fecha)}</small>
+              </div>
             </div>
-            <span class="badge bg-success-subtle text-success fw-bold text-nowrap">+${formatMoney(a.monto)}</span>
+            <span class="fw-bold text-success text-nowrap">+${formatMoney(a.monto)}</span>
           </div>
         `).join('')}
       </div>`;
   } catch (err) {
-    panel.innerHTML = '<p class="text-danger small text-center py-2">Error al cargar movimientos</p>';
+    bodyEl.innerHTML = '<p class="text-danger text-center py-4">Error al cargar los movimientos.</p>';
   }
 };
 
