@@ -1,6 +1,6 @@
 /* ================================================
-   FINANYA - UI Fintech Profesional v2
-   Paleta: #38BDF8 (azul cielo)
+   FINANYA - UI Fintech Profesional v3
+   Temas: Light (azul), Dark (azul), Pink Pastel (rosa)
    Tipografia: Montserrat
    ================================================ */
 
@@ -12,6 +12,7 @@
   --primary-glow: rgba(56, 189, 248, 0.12);
   --bg: #f8fafc;
   --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
   --text: #1e293b;
   --text-muted: #64748b;
   --text-light: #94a3b8;
@@ -19,6 +20,7 @@
   --border-focus: #38bdf8;
   --success: #10b981;
   --success-light: #d1fae5;
+  --success-soft: rgba(16,185,129,0.12);
   --danger: #ef4444;
   --danger-light: #fee2e2;
   --warning: #f59e0b;
@@ -44,12 +46,14 @@
   --primary-glow: rgba(56, 189, 248, 0.08);
   --bg: #0f172a;
   --bg-card: #1e293b;
+  --bg-hover: #334155;
   --text: #f1f5f9;
   --text-muted: #94a3b8;
   --text-light: #64748b;
   --border: #334155;
   --border-focus: #38bdf8;
   --success-light: #064e3b;
+  --success-soft: rgba(16,185,129,0.12);
   --danger-light: #450a0a;
   --warning-light: #451a03;
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -57,6 +61,56 @@
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.4);
   --shadow-primary: 0 4px 16px rgba(56, 189, 248, 0.15);
+}
+
+[data-bs-theme="pink"] {
+  --primary: #f9a8d4;
+  --primary-hover: #f472b6;
+  --primary-active: #ec4899;
+  --primary-light: #fce7f3;
+  --primary-glow: rgba(249, 168, 212, 0.15);
+  --bg: #fef6fb;
+  --bg-card: #ffffff;
+  --bg-hover: #fce7f3;
+  --text: #831843;
+  --text-muted: #9f1239;
+  --text-light: #be185d;
+  --border: #fbcfe8;
+  --border-focus: #f9a8d4;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --success-soft: rgba(16,185,129,0.12);
+  --danger: #f43f5e;
+  --danger-light: #ffe4e6;
+  --warning: #fb923c;
+  --warning-light: #ffedd5;
+  --info: #c084fc;
+  --shadow-xs: 0 1px 3px rgba(236, 72, 153, 0.08);
+  --shadow-sm: 0 3px 10px rgba(236, 72, 153, 0.1);
+  --shadow: 0 6px 20px rgba(236, 72, 153, 0.12);
+  --shadow-lg: 0 15px 50px rgba(236, 72, 153, 0.15);
+  --shadow-primary: 0 6px 20px rgba(249, 168, 212, 0.35);
+}
+
+/* ===== THEME BUTTONS ===== */
+.theme-btn {
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  transition: var(--transition);
+  opacity: 0.6;
+}
+.theme-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-primary);
+}
+.theme-btn.active {
+  opacity: 1;
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: var(--shadow-primary);
+  font-size: 1rem;
 }
 
 /* ===== BASE ===== */
@@ -966,4 +1020,152 @@ select.form-select option:checked {
 }
 .sortable-th:hover {
   color: var(--primary) !important;
+}
+
+/* ===== TEMA PINK PASTEL — overrides Bootstrap ===== */
+
+/* Fondo general con gradiente suave */
+[data-bs-theme="pink"] body {
+  background: linear-gradient(135deg, #fef6fb 0%, #fce7f3 50%, #fdf2f8 100%);
+  background-attachment: fixed;
+}
+
+/* Navbar */
+[data-bs-theme="pink"] .app-navbar {
+  background: rgba(255,255,255,0.85) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #fbcfe8;
+}
+[data-bs-theme="pink"] .app-navbar .nav-link.active {
+  background: linear-gradient(135deg, #f9a8d4, #f472b6);
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(244,114,182,0.35);
+}
+[data-bs-theme="pink"] .app-navbar .navbar-brand {
+  color: #be185d !important;
+}
+
+/* Cards */
+[data-bs-theme="pink"] .content-card,
+[data-bs-theme="pink"] .card {
+  border: 1px solid #fbcfe8;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 4px 20px rgba(244,114,182,0.08);
+}
+[data-bs-theme="pink"] .content-card-header {
+  border-bottom: 1px solid #fbcfe8;
+  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+}
+
+/* Stat cards */
+[data-bs-theme="pink"] .stat-card {
+  background: linear-gradient(135deg, #fdf2f8, #fff);
+  border: 1px solid #fbcfe8;
+}
+[data-bs-theme="pink"] .stat-card .stat-icon {
+  background: linear-gradient(135deg, #f9a8d4, #f472b6);
+  color: #fff;
+}
+
+/* Botones primarios */
+[data-bs-theme="pink"] .btn-primary {
+  background: linear-gradient(135deg, #f9a8d4, #f472b6) !important;
+  border-color: #f472b6 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(244,114,182,0.3);
+}
+[data-bs-theme="pink"] .btn-primary:hover {
+  background: linear-gradient(135deg, #f472b6, #ec4899) !important;
+  border-color: #ec4899 !important;
+}
+[data-bs-theme="pink"] .btn-outline-primary {
+  color: #be185d !important;
+  border-color: #f9a8d4 !important;
+}
+[data-bs-theme="pink"] .btn-outline-primary:hover {
+  background: #fce7f3 !important;
+  color: #9d174d !important;
+}
+[data-bs-theme="pink"] .btn-outline-info {
+  color: #9333ea !important;
+  border-color: #c084fc !important;
+}
+[data-bs-theme="pink"] .btn-outline-info:hover {
+  background: #f3e8ff !important;
+}
+
+/* Progress bars */
+[data-bs-theme="pink"] .progress-bar {
+  background: linear-gradient(90deg, #f9a8d4, #f472b6) !important;
+}
+[data-bs-theme="pink"] .progress-bar.bg-success {
+  background: linear-gradient(90deg, #6ee7b7, #10b981) !important;
+}
+[data-bs-theme="pink"] .progress-bar.bg-warning {
+  background: linear-gradient(90deg, #fcd34d, #f59e0b) !important;
+}
+
+/* Badges */
+[data-bs-theme="pink"] .badge.bg-primary {
+  background: linear-gradient(135deg, #f9a8d4, #f472b6) !important;
+  color: #fff !important;
+}
+
+/* Links y texto primario */
+[data-bs-theme="pink"] a,
+[data-bs-theme="pink"] .text-primary {
+  color: #be185d !important;
+}
+
+/* Inputs enfocados */
+[data-bs-theme="pink"] .form-control:focus,
+[data-bs-theme="pink"] .form-select:focus {
+  border-color: #f9a8d4;
+  box-shadow: 0 0 0 3px rgba(249,168,212,0.25);
+}
+
+/* Custom select */
+[data-bs-theme="pink"] .custom-select-trigger {
+  border-color: #fbcfe8;
+}
+[data-bs-theme="pink"] .custom-select-trigger.open,
+[data-bs-theme="pink"] .custom-select-trigger:hover {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 3px rgba(249,168,212,0.2);
+}
+[data-bs-theme="pink"] .custom-select-options {
+  border-color: #fbcfe8;
+}
+[data-bs-theme="pink"] .custom-select-option:hover {
+  background: #fce7f3;
+  color: #9d174d;
+}
+[data-bs-theme="pink"] .custom-select-option.selected {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+/* Sidebar / user avatar */
+[data-bs-theme="pink"] .user-avatar {
+  background: linear-gradient(135deg, #f9a8d4, #f472b6);
+  color: #fff;
+}
+
+/* Toast de éxito */
+[data-bs-theme="pink"] .toast.bg-success {
+  background: linear-gradient(135deg, #6ee7b7, #10b981) !important;
+}
+
+/* Chat FAB */
+[data-bs-theme="pink"] .chat-fab {
+  background: linear-gradient(135deg, #f9a8d4, #f472b6);
+  color: #fff;
+}
+
+/* Scrollbar */
+[data-bs-theme="pink"] ::-webkit-scrollbar-thumb {
+  background: #fbcfe8;
+}
+[data-bs-theme="pink"] ::-webkit-scrollbar-thumb:hover {
+  background: #f9a8d4;
 }

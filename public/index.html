@@ -277,9 +277,10 @@
           </ul>
           <div class="d-flex align-items-center gap-3">
             <button id="btn-admin-panel" class="btn btn-outline-warning btn-sm rounded-pill d-none"><i class="bi bi-shield-lock"></i> Admin</button>
-            <div class="form-check form-switch mb-0">
-              <input class="form-check-input" type="checkbox" id="theme-switch">
-              <label class="form-check-label small" for="theme-switch"><i class="bi bi-moon-stars"></i></label>
+            <div class="d-flex gap-1 align-items-center" id="theme-buttons">
+              <button class="btn btn-sm rounded-circle theme-btn" id="theme-light" title="Tema claro" style="width:30px;height:30px;padding:0;font-size:0.85rem;">☀️</button>
+              <button class="btn btn-sm rounded-circle theme-btn" id="theme-dark" title="Tema oscuro" style="width:30px;height:30px;padding:0;font-size:0.85rem;">🌙</button>
+              <button class="btn btn-sm rounded-circle theme-btn" id="theme-pink" title="Tema rosa pastel" style="width:30px;height:30px;padding:0;font-size:0.85rem;">🌸</button>
             </div>
             <div class="user-avatar" id="user-avatar">A</div>
             <span id="user-name" class="fw-semibold small d-none d-md-inline"></span>

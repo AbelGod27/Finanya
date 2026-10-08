@@ -108,25 +108,23 @@ function createConfirmModal() {
 
 // ===== THEME =====
 function initTheme() {
-  const saved = localStorage.getItem('finanya-theme');
-  if (saved === 'dark') {
-    document.documentElement.setAttribute('data-bs-theme', 'dark');
-    $('#theme-switch').checked = true;
-  } else {
-    document.documentElement.setAttribute('data-bs-theme', 'light');
-    $('#theme-switch').checked = false;
-  }
+  const saved = localStorage.getItem('finanya-theme') || 'light';
+  applyTheme(saved);
 }
 
-$('#theme-switch').addEventListener('change', (e) => {
-  if (e.target.checked) {
-    document.documentElement.setAttribute('data-bs-theme', 'dark');
-    localStorage.setItem('finanya-theme', 'dark');
-  } else {
-    document.documentElement.setAttribute('data-bs-theme', 'light');
-    localStorage.setItem('finanya-theme', 'light');
-  }
-});
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-bs-theme', theme);
+  localStorage.setItem('finanya-theme', theme);
+  // Marcar botón activo
+  ['light','dark','pink'].forEach(t => {
+    const btn = $(`#theme-${t}`);
+    if (btn) btn.classList.toggle('active', t === theme);
+  });
+}
+
+$('#theme-light').addEventListener('click', () => applyTheme('light'));
+$('#theme-dark').addEventListener('click', () => applyTheme('dark'));
+$('#theme-pink').addEventListener('click', () => applyTheme('pink'));
 
 // ===== LANDING PAGE =====
 $('#landing-login').addEventListener('click', () => { showAuth('login'); });
@@ -725,11 +723,13 @@ let chartIngresos = null;
 const chartColors = ['#38bdf8', '#a78bfa', '#f59e0b', '#10b981', '#ef4444', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
 
 function getChartTheme() {
-  const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  const theme = document.documentElement.getAttribute('data-bs-theme');
+  const isDark = theme === 'dark';
+  const isPink = theme === 'pink';
   return {
-    textColor: isDark ? '#94a3b8' : '#64748b',
-    gridColor: isDark ? '#334155' : '#e2e8f0',
-    bgColor: isDark ? '#1e293b' : '#ffffff'
+    textColor: isDark ? '#94a3b8' : isPink ? '#9f1239' : '#64748b',
+    gridColor: isDark ? '#334155' : isPink ? '#fbcfe8' : '#e2e8f0',
+    bgColor:   isDark ? '#1e293b' : isPink ? '#fdf2f8' : '#ffffff'
   };
 }
 
@@ -878,8 +878,11 @@ function renderChartIngresos(ingresos) {
 }
 
 // Re-render charts on theme change
-$('#theme-switch').addEventListener('change', () => {
-  setTimeout(() => { if (currentUser) loadDashboard(); }, 100);
+['light','dark','pink'].forEach(t => {
+  const btn = $(`#theme-${t}`);
+  if (btn) btn.addEventListener('click', () => {
+    setTimeout(() => { if (currentUser) loadDashboard(); }, 100);
+  });
 });
 
 // ===== CATEGORÍAS =====
