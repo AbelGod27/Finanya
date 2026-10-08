@@ -1,4 +1,7 @@
-// ===== ANALISIS FINANCIERO INTELIGENTE v2 =====
+// ===== ANALISIS FINANCIERO INTELIGENTE v3 =====
+let chartTendencia = null;
+let chartMetodoPago = null;
+
 async function loadAnalisis() {
   try {
     const [ingresos, gastos, metas, userCuentas] = await Promise.all([
@@ -169,8 +172,27 @@ async function loadAnalisis() {
     if (numCatsUsadas <= 2 && gasAct.length > 5) recs.push(`Categoriza mejor tus gastos para entender a dónde va tu dinero.`);
     if (gastoPromTx > promGas * 0.3 && gasAct.length < 5) recs.push(`Pocos gastos pero grandes. Verifica si son necesarios.`);
 
-    // ===== RENDER =====
+    // ===== ÚLTIMOS 6 MESES =====
     const mNom = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const ultimos6 = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(anioActual, mesActual - i, 1);
+      const m = d.getMonth();
+      const a = d.getFullYear();
+      const ingM = filtraMes(ingresos, m, a).reduce((s, x) => s + Number(x.monto), 0);
+      const gasM = filtraMes(gastos, m, a).reduce((s, x) => s + Number(x.monto), 0);
+      ultimos6.push({ mes: mNom[m], ingreso: ingM, gasto: gasM, balance: ingM - gasM });
+    }
+
+    // ===== MÉTODO DE PAGO =====
+    const metodosMap = {};
+    gasAct.forEach(g => {
+      const mp = g.metodo_pago || 'Otro';
+      metodosMap[mp] = (metodosMap[mp] || 0) + Number(g.monto);
+    });
+    const metodosEntries = Object.entries(metodosMap).sort((a, b) => b[1] - a[1]);
+
+    // ===== RENDER =====
 
     // Salud financiera
     $('#analisis-resumen').innerHTML = `
@@ -230,6 +252,197 @@ async function loadAnalisis() {
       return `<tr><td class="fw-medium">${cat}</td><td>${formatMoney(ant)}</td><td>${formatMoney(act)}</td><td>${pct}%</td><td><span class="badge bg-${v<=0?'success':'danger'} bg-opacity-10 text-${v<=0?'success':'danger'}">${v>=0?'+':''}${v}%</span></td></tr>`;
     }).join('');
     $('#analisis-categorias').innerHTML = catRows ? `<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Categoría</th><th>Anterior</th><th>Actual</th><th>% Total</th><th>Var</th></tr></thead><tbody>${catRows}</tbody></table></div>` : '<p class="text-muted text-center small py-3">Sin datos</p>';
+
+    // ===== GRÁFICA TENDENCIA 6 MESES =====
+    const theme = getChartTheme();
+    const tieneData6 = ultimos6.some(x => x.ingreso > 0 || x.gasto > 0);
+    const canvasTend = $('#chart-tendencia-analisis');
+    const emptyTend = $('#chart-tendencia-empty');
+
+    if (!tieneData6) {
+      canvasTend.style.display = 'none';
+      emptyTend.classList.remove('d-none');
+    } else {
+      canvasTend.style.display = 'block';
+      emptyTend.classList.add('d-none');
+      if (chartTendencia) chartTendencia.destroy();
+      chartTendencia = new Chart(canvasTend, {
+        type: 'bar',
+        data: {
+          labels: ultimos6.map(x => x.mes),
+          datasets: [
+            {
+              label: 'Ingresos',
+              data: ultimos6.map(x => x.ingreso),
+              backgroundColor: 'rgba(16,185,129,0.7)',
+              borderRadius: 6,
+              order: 2
+            },
+            {
+              label: 'Gastos',
+              data: ultimos6.map(x => x.gasto),
+              backgroundColor: 'rgba(239,68,68,0.7)',
+              borderRadius: 6,
+              order: 2
+            },
+            {
+              label: 'Balance',
+              data: ultimos6.map(x => x.balance),
+              type: 'line',
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56,189,248,0.1)',
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#38bdf8',
+              tension: 0.4,
+              fill: false,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: theme.textColor, font: { size: 11 }, boxWidth: 12 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: theme.textColor }, grid: { color: theme.gridColor } },
+            y: {
+              ticks: { color: theme.textColor, callback: v => formatMoney(v) },
+              grid: { color: theme.gridColor }
+            }
+          }
+        }
+      });
+    }
+
+    // ===== GRÁFICA MÉTODO DE PAGO =====
+    const canvasMetodo = $('#chart-metodo-pago');
+    const emptyMetodo = $('#chart-metodo-empty');
+    const listaMetodo = $('#analisis-metodo-lista');
+    const metodoColors = ['#38bdf8','#a78bfa','#f59e0b','#10b981','#ef4444'];
+
+    if (metodosEntries.length === 0) {
+      canvasMetodo.style.display = 'none';
+      emptyMetodo.classList.remove('d-none');
+      listaMetodo.innerHTML = '';
+    } else {
+      canvasMetodo.style.display = 'block';
+      emptyMetodo.classList.add('d-none');
+      if (chartMetodoPago) chartMetodoPago.destroy();
+      chartMetodoPago = new Chart(canvasMetodo, {
+        type: 'doughnut',
+        data: {
+          labels: metodosEntries.map(([k]) => k),
+          datasets: [{
+            data: metodosEntries.map(([, v]) => v),
+            backgroundColor: metodoColors.slice(0, metodosEntries.length),
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${formatMoney(ctx.parsed)}` } }
+          }
+        }
+      });
+
+      // Lista debajo del doughnut
+      listaMetodo.innerHTML = metodosEntries.map(([k, v], i) => {
+        const pct = tGasAct > 0 ? Math.round((v / tGasAct) * 100) : 0;
+        return `<div class="d-flex align-items-center justify-content-between py-1" style="font-size:0.81rem;">
+          <div class="d-flex align-items-center gap-2">
+            <span style="width:10px;height:10px;border-radius:50%;background:${metodoColors[i]};display:inline-block;flex-shrink:0;"></span>
+            <span class="text-muted">${k}</span>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="fw-bold">${formatMoney(v)}</span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary">${pct}%</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ===== ESTADO DE CUENTAS =====
+    const tipoIcono = { efectivo: 'bi-cash', banco: 'bi-bank', tarjeta: 'bi-credit-card', credito: 'bi-credit-card-2-front', ahorro: 'bi-piggy-bank', otro: 'bi-wallet2' };
+    const tipoLabel = { efectivo: 'Efectivo', banco: 'Banco', tarjeta: 'Tarjeta débito', credito: 'Crédito', ahorro: 'Ahorro', otro: 'Otro' };
+    const totalPatrimonio = userCuentas.filter(c => c.tipo !== 'credito').reduce((s, c) => s + Number(c.saldo_actual), 0);
+    const totalDeudaCC = userCuentas.filter(c => c.tipo === 'credito').reduce((s, c) => s + Math.abs(Math.min(0, Number(c.saldo_actual))), 0);
+
+    if (userCuentas.length === 0) {
+      $('#analisis-cuentas').innerHTML = '<p class="text-muted text-center small fst-italic py-3">Sin cuentas registradas</p>';
+    } else {
+      $('#analisis-cuentas').innerHTML = `
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 text-center" style="background:var(--bg-hover);">
+              <div class="small text-muted mb-1">Cuentas</div>
+              <div class="fw-bold fs-5">${userCuentas.length}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 text-center" style="background:var(--bg-hover);">
+              <div class="small text-muted mb-1">Patrimonio líquido</div>
+              <div class="fw-bold fs-6 text-success">${formatMoney(totalPatrimonio)}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 text-center" style="background:var(--bg-hover);">
+              <div class="small text-muted mb-1">Deuda tarjetas</div>
+              <div class="fw-bold fs-6 text-${totalDeudaCC > 0 ? 'danger' : 'muted'}">${formatMoney(totalDeudaCC)}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="rounded-3 p-3 text-center" style="background:var(--bg-hover);">
+              <div class="small text-muted mb-1">Balance neto</div>
+              <div class="fw-bold fs-6 text-${totalPatrimonio - totalDeudaCC >= 0 ? 'primary' : 'danger'}">${formatMoney(totalPatrimonio - totalDeudaCC)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead>
+              <tr>
+                <th>Cuenta</th>
+                <th>Tipo</th>
+                <th class="text-end">Saldo</th>
+                <th class="text-end d-none d-md-table-cell">Límite</th>
+                <th class="text-end d-none d-md-table-cell">Disponible</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${userCuentas.map(c => {
+                const saldo = Number(c.saldo_actual);
+                const esCredito = c.tipo === 'credito';
+                const limite = esCredito && c.limite_credito ? Number(c.limite_credito) : null;
+                const deudaC = esCredito ? Math.abs(Math.min(0, saldo)) : 0;
+                const disponible = limite !== null ? limite - deudaC : null;
+                const saldoColor = esCredito ? (deudaC > 0 ? 'danger' : 'success') : (saldo >= 0 ? 'success' : 'danger');
+                const icono = tipoIcono[c.tipo] || 'bi-wallet2';
+                return `<tr>
+                  <td class="fw-medium"><i class="bi ${icono} me-2 text-primary opacity-75"></i>${c.nombre}</td>
+                  <td><span class="badge bg-secondary bg-opacity-10 text-secondary">${tipoLabel[c.tipo] || c.tipo}</span></td>
+                  <td class="text-end fw-bold text-${saldoColor}">${esCredito ? '-' + formatMoney(deudaC) : formatMoney(saldo)}</td>
+                  <td class="text-end text-muted small d-none d-md-table-cell">${limite !== null ? formatMoney(limite) : '—'}</td>
+                  <td class="text-end d-none d-md-table-cell">${disponible !== null ? `<span class="text-${disponible > 0 ? 'success' : 'danger'}">${formatMoney(disponible)}</span>` : '—'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
 
   } catch (err) { console.error('Error cargando análisis:', err); }
 }

@@ -187,9 +187,9 @@ body {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-xs);
   box-shadow: var(--shadow);
-  max-height: 200px;
+  max-height: 180px;
   overflow-y: auto;
-  z-index: 1050;
+  z-index: 9999;
   display: none;
 }
 .custom-select-options.show {
@@ -220,6 +220,18 @@ body {
 .custom-select-options::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 3px;
+}
+
+/* Fix: el modal de Bootstrap no debe cortar los dropdowns custom */
+#appModal .modal-body {
+  overflow-x: visible !important;
+  overflow-y: auto;
+}
+#appModal .modal-content {
+  overflow: visible !important;
+}
+#appModal .modal-dialog {
+  overflow: visible !important;
 }
 
 /* Fix: selects nativos en Android WebView - forzar fondo claro */

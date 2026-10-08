@@ -399,6 +399,7 @@ function initCustomSelects(container) {
     const options = wrapper.querySelector('.custom-select-options');
     const hiddenInput = wrapper.querySelector('input[type="hidden"]');
     const label = trigger.querySelector('.custom-select-label');
+    const insideModal = !!wrapper.closest('#appModal');
 
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -409,8 +410,20 @@ function initCustomSelects(container) {
           t.closest('.custom-select-wrapper').querySelector('.custom-select-options').classList.remove('show');
         }
       });
+
+      const isOpening = !trigger.classList.contains('open');
       trigger.classList.toggle('open');
       options.classList.toggle('show');
+
+      // Si está dentro del modal, usar position fixed para evitar desbordamiento
+      if (insideModal && isOpening) {
+        const rect = trigger.getBoundingClientRect();
+        options.style.position = 'fixed';
+        options.style.top = `${rect.bottom + 4}px`;
+        options.style.left = `${rect.left}px`;
+        options.style.width = `${rect.width}px`;
+        options.style.zIndex = '9999';
+      }
     });
 
     options.querySelectorAll('.custom-select-option').forEach(opt => {
@@ -435,6 +448,14 @@ document.addEventListener('click', () => {
     t.closest('.custom-select-wrapper').querySelector('.custom-select-options').classList.remove('show');
   });
 });
+
+// Cerrar dropdowns si el modal hace scroll (están en position:fixed y no seguirían al trigger)
+document.addEventListener('scroll', () => {
+  document.querySelectorAll('.custom-select-trigger.open').forEach(t => {
+    t.classList.remove('open');
+    t.closest('.custom-select-wrapper').querySelector('.custom-select-options').classList.remove('show');
+  });
+}, true);
 
 // ===== MODAL =====
 function openModal(title, fields, onSubmit) {
@@ -527,6 +548,7 @@ async function loadUserAvatar() {
 
 // ===== MOTIVATIONAL QUOTES =====
 const quotes = [
+  // Ahorro y hábitos
   "El mejor momento para empezar a ahorrar fue ayer. El segundo mejor momento es ahora.",
   "No se trata de cuánto ganas, sino de cuánto conservas.",
   "Un presupuesto es decirle a tu dinero a dónde ir, en vez de preguntarte a dónde se fue.",
@@ -556,7 +578,44 @@ const quotes = [
   "La paciencia es la mejor aliada del ahorro.",
   "No necesitas ganar más, necesitas administrar mejor lo que ya tienes.",
   "Cada decisión financiera que tomas hoy moldea tu futuro.",
-  "La educación financiera es la inversión con mayor retorno."
+  "La educación financiera es la inversión con mayor retorno.",
+  // Mentalidad y motivación
+  "El dinero no trae felicidad, pero la tranquilidad financiera sí.",
+  "Un peso bien gastado vale más que cien mal invertidos.",
+  "La riqueza verdadera es no necesitar más de lo que tienes.",
+  "Controlar tus finanzas es controlar tu destino.",
+  "El éxito financiero no es un golpe de suerte, es resultado de decisiones inteligentes.",
+  "No te compares con los demás, compárate con quien eras ayer.",
+  "La confianza en tu dinero empieza cuando dejas de ignorarlo.",
+  "Cada meta financiera cumplida es una victoria que nadie te puede quitar.",
+  "El dinero que ahorras hoy es la libertad que tendrás mañana.",
+  "Administrar bien el dinero es una habilidad que se aprende, no un talento que se nace.",
+  // Deuda y crédito
+  "Pagar deudas es ahorrar a tasa de interés garantizada.",
+  "Una tarjeta de crédito es una herramienta poderosa, úsala con cabeza.",
+  "Vivir sin deudas no significa vivir sin dinero, significa vivir en paz.",
+  "La mejor forma de no tener deudas es no gastar lo que no tienes.",
+  "Paga primero las deudas con mayor interés, el tiempo vale oro.",
+  // Metas e inversión
+  "Una meta sin fecha es solo un sueño. Con fecha, es un plan.",
+  "No importa qué tan lento vayas, siempre y cuando no te detengas.",
+  "Los grandes patrimonios se construyeron con pequeñas decisiones repetidas.",
+  "Ahorrar el 1% más cada mes es un 12% más al año sin casi sentirlo.",
+  "El interés compuesto es la octava maravilla del mundo.",
+  "Diversificar no es desconfiar, es ser inteligente.",
+  "Define el para qué del dinero y el cómo se vuelve más fácil.",
+  "Una meta financiera clara convierte el sacrificio de hoy en recompensa de mañana.",
+  // Psicología del dinero
+  "El mayor enemigo del ahorro no es el salario bajo, es el gasto impulsivo.",
+  "Antes de comprar algo, pregúntate: ¿lo necesito, lo quiero, o solo me llama la atención?",
+  "Espera 24 horas antes de una compra grande. La urgencia suele desaparecer.",
+  "El precio de una cosa es la cantidad de vida que pagas por ella.",
+  "Comparar precios no es tacañería, es inteligencia.",
+  "El estilo de vida que aparentas puede costarte la libertad financiera real.",
+  "Gasta en experiencias, no en cosas. Las experiencias se quedan contigo.",
+  "El dinero que no ves no lo gastas: automatiza tu ahorro.",
+  "Registrar cada gasto no te hace pobre, te hace consciente.",
+  "La claridad financiera reduce el estrés más que cualquier otra cosa."
 ];
 
 function loadMotivation() {
@@ -592,7 +651,7 @@ async function loadDashboard() {
 
     $('#total-ingresos').textContent = formatMoney(totalIngresos);
     $('#total-gastos').textContent = formatMoney(totalGastos);
-    $('#balance').textContent = formatMoney(totalIngresos - totalGastos - totalAhorro);
+    $('#balance').textContent = formatMoney(totalIngresos - totalGastos);
     $('#total-ahorro').textContent = formatMoney(totalAhorro);
 
     // Stats: top category, average, savings rate
@@ -1013,12 +1072,73 @@ window.editIngreso = (id, descripcion, monto, fecha) => {
 };
 
 // ===== GASTOS =====
+// Tipos de cuenta compatibles por método de pago
+const cuentasPorMetodo = {
+  'Efectivo':           ['efectivo'],
+  'Tarjeta de débito':  ['tarjeta', 'banco'],
+  'Tarjeta de crédito': ['credito'],
+  'Transferencia':      ['banco', 'ahorro'],
+  'Pago móvil':         ['banco', 'ahorro', 'otro']
+};
+
+function filtrarCuentasPorMetodo(metodo, todasCuentas) {
+  const tiposPermitidos = cuentasPorMetodo[metodo];
+  if (!tiposPermitidos) return todasCuentas;
+  const filtradas = todasCuentas.filter(c => tiposPermitidos.includes(c.tipo));
+  return filtradas.length > 0 ? filtradas : todasCuentas; // fallback: mostrar todas si no hay coincidencia
+}
+
+function actualizarSelectCuenta(metodo, todasCuentas) {
+  const wrapper = document.querySelector('#modal-body .custom-select-wrapper[data-name="id_cuenta"]');
+  if (!wrapper) return;
+  const cuentasFiltradas = filtrarCuentasPorMetodo(metodo, todasCuentas);
+  const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+  const label = wrapper.querySelector('.custom-select-label');
+  const optionsContainer = wrapper.querySelector('.custom-select-options');
+
+  // Reconstruir opciones
+  optionsContainer.innerHTML = cuentasFiltradas.map((c, i) =>
+    `<div class="custom-select-option${i === 0 ? ' selected' : ''}" data-value="${c.id_cuenta}">${c.nombre} (${formatMoney(c.saldo_actual)})</div>`
+  ).join('');
+
+  // Seleccionar la primera por defecto
+  const primera = cuentasFiltradas[0];
+  hiddenInput.value = primera ? primera.id_cuenta : '';
+  label.textContent = primera ? `${primera.nombre} (${formatMoney(primera.saldo_actual)})` : 'Sin cuentas disponibles';
+
+  // Re-asignar click a las nuevas opciones
+  const trigger = wrapper.querySelector('.custom-select-trigger');
+  optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      hiddenInput.value = opt.dataset.value;
+      label.textContent = opt.textContent;
+      optionsContainer.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      trigger.classList.remove('open');
+      optionsContainer.classList.remove('show');
+    });
+  });
+
+  // Si el dropdown ya está abierto, reposicionar con fixed para no desbordarse
+  if (optionsContainer.classList.contains('show') && wrapper.closest('#appModal')) {
+    const rect = trigger.getBoundingClientRect();
+    optionsContainer.style.position = 'fixed';
+    optionsContainer.style.top = `${rect.bottom + 4}px`;
+    optionsContainer.style.left = `${rect.left}px`;
+    optionsContainer.style.width = `${rect.width}px`;
+    optionsContainer.style.zIndex = '9999';
+  }
+}
+
 $('#btn-nuevo-gasto').addEventListener('click', async () => {
   const catGastos = categorias.filter(c => c.tipo === 'gasto');
   if (catGastos.length === 0) { showToast('Primero crea una categoría de tipo gasto', 'warning'); return; }
   let userCuentas = [];
   try { userCuentas = await request(`/cuentas/usuario/${currentUser.id_usuario}`); } catch(e) {}
   if (userCuentas.length === 0) { showToast('Primero crea una cuenta financiera para registrar gastos', 'warning'); return; }
+
+  const metodoPagoDefault = 'Efectivo';
+  const cuentasIniciales = filtrarCuentasPorMetodo(metodoPagoDefault, userCuentas);
 
   openModal('Nuevo Gasto', [
     { name: 'monto', label: 'Monto', type: 'number', required: true, step: '0.01', min: '0.01', placeholder: '0.00' },
@@ -1032,7 +1152,7 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
       { value: 'Pago móvil', label: 'Pago móvil' }
     ]},
     { name: 'id_categoria', label: 'Categoría', type: 'select', required: true, options: catGastos.map(c => ({ value: c.id_categoria, label: c.nombre })) },
-    { name: 'id_cuenta', label: 'Cuenta', type: 'select', required: true, options: userCuentas.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) }
+    { name: 'id_cuenta', label: 'Cuenta', type: 'select', required: true, options: cuentasIniciales.map(c => ({ value: c.id_cuenta, label: `${c.nombre} (${formatMoney(c.saldo_actual)})` })) }
   ], async (data) => {
     try {
       await request('/gastos', { method: 'POST', body: JSON.stringify({ ...data, id_usuario: currentUser.id_usuario }) });
@@ -1042,6 +1162,16 @@ $('#btn-nuevo-gasto').addEventListener('click', async () => {
       showToast('Gasto registrado', 'success');
     } catch (err) { showToast(err.error || 'Error al crear gasto', 'danger'); }
   });
+
+  // Escuchar cambios en el select de método de pago para filtrar cuentas
+  const metodoPagoWrapper = document.querySelector('#modal-body .custom-select-wrapper[data-name="metodo_pago"]');
+  if (metodoPagoWrapper) {
+    metodoPagoWrapper.querySelector('.custom-select-options').querySelectorAll('.custom-select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        actualizarSelectCuenta(opt.dataset.value, userCuentas);
+      });
+    });
+  }
 });
 
 let gastosData = [];
@@ -1527,12 +1657,60 @@ async function loadMetas() {
               <button class="btn btn-sm btn-outline-secondary" onclick="editarMeta(${m.id_meta}, '${m.nombre.replace(/'/g, "\\'")}', ${m.monto_objetivo || 0}, ${m.monto_actual})"><i class="bi bi-pencil"></i> Editar</button>
               <button class="btn btn-sm btn-outline-danger" onclick="deleteMeta(${m.id_meta})"><i class="bi bi-trash"></i></button>
             </div>
+            <div class="mt-3">
+              <button class="btn btn-sm btn-link text-muted p-0 w-100 text-start" onclick="toggleMovimientosMeta(${m.id_meta}, this)">
+                <i class="bi bi-clock-history me-1"></i>Ver movimientos <i class="bi bi-chevron-down ms-1 toggle-icon"></i>
+              </button>
+              <div id="movimientos-meta-${m.id_meta}" class="mt-2" style="display:none;"></div>
+            </div>
           </div>
         </div>
       </div>`;
     }).join('');
   } catch (err) { console.error('Error cargando metas:', err); }
 }
+
+window.toggleMovimientosMeta = async (id, btn) => {
+  const panel = $(`#movimientos-meta-${id}`);
+  const icon = btn.querySelector('.toggle-icon');
+  const visible = panel.style.display !== 'none';
+
+  if (visible) {
+    panel.style.display = 'none';
+    icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
+    return;
+  }
+
+  // Mostrar spinner mientras carga
+  panel.style.display = 'block';
+  icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
+  panel.innerHTML = '<p class="text-muted small text-center py-2"><span class="spinner-border spinner-border-sm me-1"></span>Cargando...</p>';
+
+  try {
+    const meta = await request(`/metas/${id}`);
+    const aportes = meta.aportes || [];
+
+    if (aportes.length === 0) {
+      panel.innerHTML = '<p class="text-muted small text-center fst-italic py-2">Sin movimientos registrados</p>';
+      return;
+    }
+
+    panel.innerHTML = `
+      <div class="list-group list-group-flush" style="max-height:220px;overflow-y:auto;border-radius:8px;">
+        ${aportes.map(a => `
+          <div class="list-group-item px-2 py-2 d-flex justify-content-between align-items-start gap-2" style="font-size:0.82rem;">
+            <div>
+              <div class="fw-medium">${a.descripcion || '<span class="text-muted fst-italic">Sin descripción</span>'}</div>
+              <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>${formatFecha(a.fecha)}</small>
+            </div>
+            <span class="badge bg-success-subtle text-success fw-bold text-nowrap">+${formatMoney(a.monto)}</span>
+          </div>
+        `).join('')}
+      </div>`;
+  } catch (err) {
+    panel.innerHTML = '<p class="text-danger small text-center py-2">Error al cargar movimientos</p>';
+  }
+};
 
 window.aportarMeta = async (id) => {
   let userCuentas = [];

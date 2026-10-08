@@ -232,7 +232,7 @@
   <div id="app-container" class="d-none">
     <nav class="navbar navbar-expand-xxl sticky-top app-navbar">
       <div class="container-fluid px-3 px-lg-4">
-        <a class="navbar-brand fw-bold" href="#">
+        <a class="navbar-brand fw-bold" href="#" onclick="event.preventDefault(); navigateToSection('dashboard');">
           <span class="logo-icon"><i class="bi bi-gem text-primary"></i></span> Finanya
         </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -512,6 +512,45 @@
               <div class="content-card-body" id="analisis-promedios"></div>
             </div>
           </div>
+        </div>
+
+        <!-- Tendencia 6 meses + Método de pago -->
+        <div class="row g-3 mb-4">
+          <div class="col-lg-7">
+            <div class="content-card h-100">
+              <div class="content-card-header">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-graph-up me-2"></i>Tendencia últimos 6 meses</h6>
+              </div>
+              <div class="content-card-body">
+                <div style="position:relative;height:220px;">
+                  <canvas id="chart-tendencia-analisis"></canvas>
+                </div>
+                <p class="text-muted text-center small fst-italic d-none py-3" id="chart-tendencia-empty">Sin datos suficientes</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="content-card h-100">
+              <div class="content-card-header">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-credit-card me-2"></i>Gastos por método de pago</h6>
+              </div>
+              <div class="content-card-body">
+                <div style="position:relative;height:180px;">
+                  <canvas id="chart-metodo-pago"></canvas>
+                </div>
+                <div id="analisis-metodo-lista" class="mt-2"></div>
+                <p class="text-muted text-center small fst-italic d-none py-3" id="chart-metodo-empty">Sin gastos este mes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen de cuentas -->
+        <div class="content-card mb-4">
+          <div class="content-card-header">
+            <h6 class="mb-0 fw-semibold"><i class="bi bi-wallet2 me-2"></i>Estado de cuentas</h6>
+          </div>
+          <div class="content-card-body" id="analisis-cuentas"></div>
         </div>
 
         <!-- Categoria mayor crecimiento -->
@@ -805,6 +844,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/app.js?v=4"></script>
-  <script src="js/analisis.js?v=1"></script>
+  <script src="js/analisis.js?v=2"></script>
 </body>
 </html>
